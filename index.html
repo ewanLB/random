@@ -6,20 +6,23 @@
 <title>Random Wheel</title>
 <style>
 body { font-family: sans-serif; text-align: center; padding: 20px; }
-#wheel { margin: 20px auto; }
+#wheel { margin: 20px auto; cursor: pointer; }
 #addForm { margin-top: 20px; }
+#optionList { list-style: none; padding: 0; }
+#optionList li { margin: 4px 0; padding: 4px 8px; color: #000; display: flex; justify-content: space-between; align-items: center; }
+#optionList button { margin-left: 10px; }
+#resetButton { margin-top: 10px; }
 #result { font-size: 1.2em; margin-top: 20px; }
 </style>
 </head>
 <body>
 <canvas id="wheel" width="500" height="500"></canvas>
-<div>
-  <button id="spinButton">Start</button>
-</div>
 <form id="addForm">
   <input id="newItem" type="text" placeholder="Add option" required>
   <button type="submit">Add</button>
 </form>
+<button id="resetButton">Reset</button>
+<ul id="optionList"></ul>
 <div id="result"></div>
 <script src="wheel.js"></script>
 </body>
