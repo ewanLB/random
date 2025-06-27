@@ -8,6 +8,8 @@ const modalOverlay = document.getElementById('modalOverlay');
 const modalContent = document.getElementById('modalContent');
 const menuWheel = document.getElementById('menuWheel');
 const menuDraw = document.getElementById('menuDraw');
+const menuToggle = document.getElementById('menuToggle');
+const menu = document.getElementById('menu');
 const muteButton = document.getElementById('muteButton');
 const cardContainer = document.getElementById('cardContainer');
 const wheelContainer = document.getElementById('wheelContainer');
@@ -15,6 +17,27 @@ const title = document.getElementById('title');
 
 const popupSound = new Audio('clap.wav');
 let muted = false;
+
+function shuffleOptions(){
+  for(let i=options.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [options[i],options[j]]=[options[j],options[i]];
+  }
+}
+
+function playFlipSound(){
+  if(muted) return;
+  if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'square';
+  osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.1);
+}
 
 const ICONS = ['🍀','🌟','🍭','🍉','🍣','🧩','🎈','🐱','🐶','🐻'];
 
@@ -36,19 +59,20 @@ function assignUniqueIcons(arr){
     used.add(o.icon);
   });
 }
+
+let options;
 let stored = JSON.parse(localStorage.getItem('wheelOptions'));
 if(stored && stored.length){
   if(typeof stored[0] === 'object') {
     options = stored;
-    assignUniqueIcons(options);
   } else {
     options = stored.map(t => ({ text: t, active: true }));
-    assignUniqueIcons(options);
   }
 } else {
   options = ['Option 1','Option 2','Option 3'].map(t => ({ text: t, active: true }));
-  assignUniqueIcons(options);
 }
+shuffleOptions();
+assignUniqueIcons(options);
 let startAngle = 0;
 let arc = Math.PI * 2 / countActive();
 let spinTimeout = null;
@@ -329,7 +353,8 @@ let drawPhase = 'front';
 function initCards(){
   cardContainer.innerHTML = '';
   const active = options.filter(o=>o.active);
-  active.forEach((opt,i)=>{
+  const shuffled = active.slice().sort(()=>Math.random()-0.5);
+  shuffled.forEach((opt)=>{
     const card = document.createElement('div');
     card.className = 'card';
     const inner = document.createElement('div');
@@ -337,7 +362,8 @@ function initCards(){
     const front = document.createElement('div');
     front.className = 'card-face front';
     front.innerHTML = `<div>${opt.icon}</div><div>${opt.text}</div>`;
-    front.style.setProperty('--bg', getColor(i, active.length));
+    const index = active.indexOf(opt);
+    front.style.setProperty('--bg', getColor(index, active.length));
     const back = document.createElement('div');
     back.className = 'card-face back';
     back.textContent = '💖';
@@ -353,7 +379,7 @@ function initCards(){
 function flipAllToBack(){
   const cards = cardContainer.querySelectorAll('.card');
   cards.forEach((c,i)=>{
-    setTimeout(()=>{c.classList.add('flipped');}, i*150);
+    setTimeout(()=>{c.classList.add('flipped'); playFlipSound();}, i*150);
   });
   drawPhase = 'animating';
   const totalTime = cards.length * 150 + 600;
@@ -386,8 +412,10 @@ function revealCard(card){
   const result = active[Math.floor(Math.random()*active.length)];
   const front = card.querySelector('.front');
   front.innerHTML = `<div>${result.icon}</div><div>${result.text}</div>`;
-  card.classList.remove('flipped');
   const index = active.indexOf(result);
+  front.style.setProperty('--bg', getColor(index, active.length));
+  card.classList.remove('flipped');
+  playFlipSound();
   showModal(result, index);
 }
 
@@ -410,6 +438,7 @@ menuWheel.addEventListener('click', function(){
   addForm.style.display = '';
   resetButton.style.display = '';
   optionList.style.display = '';
+  menu.classList.remove('open');
 });
 
 menuDraw.addEventListener('click', function(){
@@ -420,6 +449,7 @@ menuDraw.addEventListener('click', function(){
   resetButton.style.display = '';
   optionList.style.display = '';
   initCards();
+  menu.classList.remove('open');
 });
 
 addForm.addEventListener('submit', function(e){
@@ -437,6 +467,7 @@ addForm.addEventListener('submit', function(e){
 
 resetButton.addEventListener('click', function(){
   options = ['Option 1','Option 2','Option 3'].map(t => ({ text: t, active: true }));
+  shuffleOptions();
   assignUniqueIcons(options);
   arc = Math.PI * 2 / countActive();
   saveOptions();
@@ -446,8 +477,13 @@ resetButton.addEventListener('click', function(){
 
 muteButton.addEventListener('click', function(){
   muted = !muted;
-  muteButton.textContent = muted ? 'Unmute' : 'Mute';
+  muteButton.textContent = muted ? '🔇' : '🔊';
 });
 
+menuToggle.addEventListener('click', function(){
+  menu.classList.toggle('open');
+});
+
+muteButton.textContent = '🔊';
 updateOptionList();
 drawRouletteWheel();
