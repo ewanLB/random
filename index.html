@@ -88,18 +88,12 @@ body {
   background: #ffeaa7;
   cursor: pointer;
 }
-#cardContainer {
-  margin-top: 20px;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-}
 .card {
-  width: 100px;
-  height: 140px;
+  width: 150px;
+  height: 200px;
   perspective: 600px;
   cursor: pointer;
+  position: relative;
 }
 .card-inner {
   width: 100%;
@@ -107,6 +101,13 @@ body {
   position: relative;
   transition: transform 0.6s;
   transform-style: preserve-3d;
+}
+#cardContainer {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(4, 150px);
+  justify-content: center;
+  gap: 20px;
 }
 .card.flipped .card-inner {
   transform: rotateY(180deg);
@@ -128,9 +129,18 @@ body {
   border: 2px solid #ddd;
 }
 .card-face.back {
-  background: #ffcccc;
+  background: linear-gradient(135deg, #ff9ec4, #ffe6f2);
   transform: rotateY(180deg);
-  font-size: 2em;
+  font-size: 2.5em;
+}
+
+@keyframes shuffle {
+  0%,100% { transform: translate(0,0); }
+  50% { transform: translate(var(--sx), var(--sy)); }
+}
+
+.card.shuffling {
+  animation: shuffle 0.6s ease;
 }
 #modalOverlay {
   position: fixed;
@@ -166,6 +176,7 @@ body {
   <button id="menuDraw">Lucky Draw</button>
 </div>
 <h1 id="title">Lucky Wheel</h1>
+<div id="cardContainer" style="display:none;"></div>
 <div id="wheelContainer">
   <canvas id="wheel" width="500" height="500"></canvas>
   <div id="arrow">👇</div>
@@ -176,7 +187,6 @@ body {
 </form>
 <button id="resetButton">Reset</button>
 <ul id="optionList"></ul>
-<div id="cardContainer" style="display:none;"></div>
 <div id="modalOverlay"><div class="modal" id="modalContent"></div></div>
 <script src="wheel.js"></script>
 </body>
