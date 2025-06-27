@@ -12,6 +12,8 @@ const cardContainer = document.getElementById('cardContainer');
 const wheelContainer = document.getElementById('wheelContainer');
 const title = document.getElementById('title');
 
+const popupSound = new Audio('clap.wav');
+
 const ICONS = ['🍀','🌟','🍭','🍉','🍣','🧩','🎈','🐱','🐶','🐻'];
 
 function getAvailableIcons(){
@@ -102,8 +104,8 @@ function showModal(option) {
   modalContent.innerHTML = `<span class="icon">${option.icon}</span>${option.text}`;
   modalOverlay.style.display = 'flex';
   startFireworks();
-  if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  playFireworksSound();
+  popupSound.currentTime = 0;
+  popupSound.play();
 }
 
 modalOverlay.addEventListener('click', () => {
@@ -320,7 +322,7 @@ let drawPhase = 'front';
 function initCards(){
   cardContainer.innerHTML = '';
   const active = options.filter(o=>o.active);
-  active.forEach(opt=>{
+  active.forEach((opt,i)=>{
     const card = document.createElement('div');
     card.className = 'card';
     const inner = document.createElement('div');
@@ -328,6 +330,7 @@ function initCards(){
     const front = document.createElement('div');
     front.className = 'card-face front';
     front.innerHTML = `<div>${opt.icon}</div><div>${opt.text}</div>`;
+    front.style.setProperty('--bg', getColor(i, active.length));
     const back = document.createElement('div');
     back.className = 'card-face back';
     back.textContent = '💖';
@@ -345,22 +348,28 @@ function flipAllToBack(){
   cards.forEach((c,i)=>{
     setTimeout(()=>{c.classList.add('flipped');}, i*150);
   });
-  drawPhase = 'back';
+  drawPhase = 'animating';
   const totalTime = cards.length * 150 + 600;
-  setTimeout(shuffleCards, totalTime);
+  setTimeout(()=>shuffleCards(()=>{ drawPhase = 'back'; }), totalTime);
 }
 
-function shuffleCards(){
-  const cards = cardContainer.querySelectorAll('.card');
-  cards.forEach(card => {
-    const x = Math.random()*40 - 20;
-    const y = Math.random()*40 - 20;
-    card.style.setProperty('--sx', `${x}px`);
-    card.style.setProperty('--sy', `${y}px`);
-    card.classList.add('shuffling');
+function shuffleCards(done){
+  const cards = Array.from(cardContainer.querySelectorAll('.card'));
+  const rects = cards.map(c=>c.getBoundingClientRect());
+  const order = rects.map((_,i)=>i).sort(()=>Math.random()-0.5);
+  cards.forEach((card,i)=>{
+    const dx = rects[order[i]].left - rects[i].left;
+    const dy = rects[order[i]].top - rects[i].top;
+    card.style.transition = 'transform 0.6s';
+    card.style.transform = `translate(${dx}px, ${dy}px)`;
   });
   setTimeout(()=>{
-    cards.forEach(card=>card.classList.remove('shuffling'));
+    order.forEach(idx=>cardContainer.appendChild(cards[idx]));
+    cards.forEach(card=>{
+      card.style.transition = '';
+      card.style.transform = '';
+    });
+    if(done) done();
   },600);
 }
 
@@ -376,6 +385,7 @@ function revealCard(card){
 
 function handleCardClick(e){
   const card = e.currentTarget;
+  if(drawPhase!=='front' && drawPhase!=='back') return;
   if(drawPhase==='front'){
     flipAllToBack();
   }else if(drawPhase==='back'){
