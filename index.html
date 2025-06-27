@@ -164,6 +164,31 @@ body {
   margin-bottom: 10px;
 }
 
+@media (max-width: 600px) {
+  #title {
+    font-size: 2em;
+  }
+  #wheelContainer {
+    width: 90vw;
+    height: 90vw;
+  }
+  #wheel {
+    width: 100%;
+    height: 100%;
+  }
+  #arrow {
+    font-size: 10vw;
+    top: -8vw;
+  }
+  #cardContainer {
+    grid-template-columns: repeat(2, 45vw);
+  }
+  .card {
+    width: 45vw;
+    height: 60vw;
+  }
+}
+
 @keyframes pop {
   from { transform: scale(0.5); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
@@ -174,6 +199,7 @@ body {
 <div id="menu">
   <button id="menuWheel">Lucky Wheel</button>
   <button id="menuDraw">Lucky Draw</button>
+  <button id="muteButton">Mute</button>
 </div>
 <h1 id="title">Lucky Wheel</h1>
 <div id="cardContainer" style="display:none;"></div>

@@ -8,11 +8,13 @@ const modalOverlay = document.getElementById('modalOverlay');
 const modalContent = document.getElementById('modalContent');
 const menuWheel = document.getElementById('menuWheel');
 const menuDraw = document.getElementById('menuDraw');
+const muteButton = document.getElementById('muteButton');
 const cardContainer = document.getElementById('cardContainer');
 const wheelContainer = document.getElementById('wheelContainer');
 const title = document.getElementById('title');
 
 const popupSound = new Audio('clap.wav');
+let muted = false;
 
 const ICONS = ['🍀','🌟','🍭','🍉','🍣','🧩','🎈','🐱','🐶','🐻'];
 
@@ -100,12 +102,15 @@ function updateOptionList() {
   });
 }
 
-function showModal(option) {
+function showModal(option, index) {
   modalContent.innerHTML = `<span class="icon">${option.icon}</span>${option.text}`;
+  modalContent.style.background = getColor(index, countActive());
   modalOverlay.style.display = 'flex';
   startFireworks();
-  popupSound.currentTime = 0;
-  popupSound.play();
+  if(!muted){
+    popupSound.currentTime = 0;
+    popupSound.play();
+  }
 }
 
 modalOverlay.addEventListener('click', () => {
@@ -203,7 +208,7 @@ function stopRotateWheel() {
   const index = Math.floor((360 - degrees % 360) / arcd);
   const active = options.filter(o => o.active);
   const result = active[index];
-  showModal(result);
+  showModal(result, index);
   stopSpinSound();
 }
 
@@ -222,6 +227,7 @@ function stopSpinSound(){
 }
 
 function playTick(){
+  if(muted) return;
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   osc.type = 'square';
@@ -244,6 +250,7 @@ function playTickIfNeeded(){
 }
 
 function playFireworksSound(){
+  if(muted) return;
   const duration = 2;
   const numBursts = 5;
   for(let i=0;i<numBursts;i++){
@@ -380,7 +387,8 @@ function revealCard(card){
   const front = card.querySelector('.front');
   front.innerHTML = `<div>${result.icon}</div><div>${result.text}</div>`;
   card.classList.remove('flipped');
-  showModal(result);
+  const index = active.indexOf(result);
+  showModal(result, index);
 }
 
 function handleCardClick(e){
@@ -434,6 +442,11 @@ resetButton.addEventListener('click', function(){
   saveOptions();
   updateOptionList();
   drawRouletteWheel();
+});
+
+muteButton.addEventListener('click', function(){
+  muted = !muted;
+  muteButton.textContent = muted ? 'Unmute' : 'Mute';
 });
 
 updateOptionList();
