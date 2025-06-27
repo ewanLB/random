@@ -2,7 +2,6 @@ const canvas = document.getElementById('wheel');
 const ctx = canvas.getContext('2d');
 const addForm = document.getElementById('addForm');
 const newItemInput = document.getElementById('newItem');
-const resultDiv = document.getElementById('result');
 const resetButton = document.getElementById('resetButton');
 const optionList = document.getElementById('optionList');
 const modalOverlay = document.getElementById('modalOverlay');
@@ -26,7 +25,7 @@ let spinAngleStart = 0;
 let spinTime = 0;
 let spinTimeTotal = 0;
 let audioCtx;
-let spinOsc;
+let lastTickIndex = -1;
 
 function countActive(){
   return options.filter(o => o.active).length;
@@ -111,12 +110,14 @@ function drawRouletteWheel() {
 
     ctx.save();
     ctx.fillStyle = 'black';
-    ctx.font = 'bold 24px sans-serif';
+    ctx.font = 'bold 28px "Comic Sans MS", "Trebuchet MS", cursive';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
     ctx.translate(250 + Math.cos(angle + arc / 2) * textRadius,
                   250 + Math.sin(angle + arc / 2) * textRadius);
     ctx.rotate(angle + arc / 2 + Math.PI / 2);
     const txt = `${active[i].icon} ${active[i].text}`;
-    ctx.fillText(txt, -ctx.measureText(txt).width / 2, 0);
+    ctx.fillText(txt, 0, 0);
     ctx.restore();
   }
 
@@ -146,10 +147,7 @@ function rotateWheel() {
   const spinAngle = spinAngleStart - easeOut(spinTime, 0, spinAngleStart, spinTimeTotal);
   startAngle += (spinAngle * Math.PI / 180);
   drawRouletteWheel();
-  if(spinOsc){
-    const progress = spinTime/spinTimeTotal;
-    spinOsc.frequency.setValueAtTime(600 - progress*500, audioCtx.currentTime);
-  }
+  playTickIfNeeded();
   spinTimeout = setTimeout(rotateWheel, 30);
 }
 
@@ -160,8 +158,6 @@ function stopRotateWheel() {
   const index = Math.floor((360 - degrees % 360) / arcd);
   const active = options.filter(o => o.active);
   const result = active[index];
-  const msg = 'Result: ' + result.text;
-  resultDiv.textContent = msg;
   showModal(result);
   stopSpinSound();
   playCelebrateSound();
@@ -174,34 +170,50 @@ function easeOut(t, b, c, d) {
 }
 
 function startSpinSound(){
-  spinOsc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  spinOsc.type = 'sawtooth';
-  spinOsc.frequency.setValueAtTime(600, audioCtx.currentTime);
-  spinOsc.connect(gain);
-  gain.connect(audioCtx.destination);
-  gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-  spinOsc.start();
+  lastTickIndex = -1;
 }
 
 function stopSpinSound(){
-  if(spinOsc){
-    spinOsc.stop();
-    spinOsc.disconnect();
-    spinOsc = null;
-  }
+  lastTickIndex = -1;
 }
 
-function playCelebrateSound(){
+function playTick(){
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
-  osc.type = 'triangle';
-  osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+  osc.type = 'square';
+  osc.frequency.setValueAtTime(1000, audioCtx.currentTime);
   osc.connect(gain);
   gain.connect(audioCtx.destination);
   gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
   osc.start();
-  osc.stop(audioCtx.currentTime + 0.5);
+  osc.stop(audioCtx.currentTime + 0.05);
+}
+
+function playTickIfNeeded(){
+  const degrees = startAngle * 180 / Math.PI + 90;
+  const arcd = arc * 180 / Math.PI;
+  const index = Math.floor((360 - degrees % 360) / arcd);
+  if(index !== lastTickIndex){
+    playTick();
+    lastTickIndex = index;
+  }
+}
+
+function playCelebrateSound(){
+  const bufferSize = audioCtx.sampleRate;
+  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for(let i=0;i<bufferSize;i++){
+    data[i] = (Math.random()*2-1) * Math.pow(1 - i/bufferSize, 2);
+  }
+  const noise = audioCtx.createBufferSource();
+  noise.buffer = buffer;
+  const gain = audioCtx.createGain();
+  noise.connect(gain);
+  gain.connect(audioCtx.destination);
+  gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+  noise.start();
+  noise.stop(audioCtx.currentTime + 1);
 }
 
 function startFireworks(){
