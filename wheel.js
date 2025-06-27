@@ -6,17 +6,45 @@ const resetButton = document.getElementById('resetButton');
 const optionList = document.getElementById('optionList');
 const modalOverlay = document.getElementById('modalOverlay');
 const modalContent = document.getElementById('modalContent');
+const menuWheel = document.getElementById('menuWheel');
+const menuDraw = document.getElementById('menuDraw');
+const drawContainer = document.getElementById('drawContainer');
+const drawButton = document.getElementById('drawButton');
+const wheelContainer = document.getElementById('wheelContainer');
+const title = document.getElementById('title');
 
 const ICONS = ['🍀','🌟','🍭','🍉','🍣','🧩','🎈','🐱','🐶','🐻'];
+
+function getAvailableIcons(){
+  return ICONS.filter(ic => !options.some(o => o.icon === ic));
+}
+
+function getUniqueIcon(){
+  const avail = getAvailableIcons();
+  if(avail.length === 0) return ICONS[Math.floor(Math.random()*ICONS.length)];
+  return avail[Math.floor(Math.random()*avail.length)];
+}
+
+function assignUniqueIcons(arr){
+  const used = new Set();
+  arr.forEach(o=>{
+    const pool = ICONS.filter(ic => !used.has(ic));
+    o.icon = pool.length ? pool[Math.floor(Math.random()*pool.length)] : ICONS[Math.floor(Math.random()*ICONS.length)];
+    used.add(o.icon);
+  });
+}
 let stored = JSON.parse(localStorage.getItem('wheelOptions'));
 if(stored && stored.length){
   if(typeof stored[0] === 'object') {
     options = stored;
+    assignUniqueIcons(options);
   } else {
-    options = stored.map(t => ({ text: t, active: true, icon: ICONS[Math.floor(Math.random()*ICONS.length)] }));
+    options = stored.map(t => ({ text: t, active: true }));
+    assignUniqueIcons(options);
   }
 } else {
-  options = ['Option 1','Option 2','Option 3'].map(t => ({ text: t, active: true, icon: ICONS[Math.floor(Math.random()*ICONS.length)] }));
+  options = ['Option 1','Option 2','Option 3'].map(t => ({ text: t, active: true }));
+  assignUniqueIcons(options);
 }
 let startAngle = 0;
 let arc = Math.PI * 2 / countActive();
@@ -84,7 +112,8 @@ modalOverlay.addEventListener('click', () => {
 function drawRouletteWheel() {
   const active = options.filter(o => o.active);
   const outsideRadius = 200;
-  const textRadius = 170;
+  const iconRadius = 185;
+  const textRadius = 120;
   const insideRadius = 50;
 
   ctx.clearRect(0, 0, 500, 500);
@@ -110,14 +139,24 @@ function drawRouletteWheel() {
 
     ctx.save();
     ctx.fillStyle = 'black';
-    ctx.font = 'bold 28px "Comic Sans MS", "Trebuchet MS", cursive';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '28px "Comic Sans MS", "Trebuchet MS", cursive';
+    ctx.translate(250 + Math.cos(angle + arc / 2) * iconRadius,
+                  250 + Math.sin(angle + arc / 2) * iconRadius);
+    ctx.rotate(angle + arc / 2 + Math.PI / 2);
+    ctx.fillText(active[i].icon, 0, 0);
+    ctx.restore();
+
+    ctx.save();
+    ctx.fillStyle = 'black';
+    ctx.font = 'bold 20px "Comic Sans MS", "Trebuchet MS", cursive';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.translate(250 + Math.cos(angle + arc / 2) * textRadius,
                   250 + Math.sin(angle + arc / 2) * textRadius);
     ctx.rotate(angle + arc / 2 + Math.PI / 2);
-    const txt = `${active[i].icon} ${active[i].text}`;
-    ctx.fillText(txt, 0, 0);
+    ctx.fillText(active[i].text, 0, 0);
     ctx.restore();
   }
 
@@ -200,20 +239,20 @@ function playTickIfNeeded(){
 }
 
 function playCelebrateSound(){
-  const bufferSize = audioCtx.sampleRate;
-  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-  const data = buffer.getChannelData(0);
-  for(let i=0;i<bufferSize;i++){
-    data[i] = (Math.random()*2-1) * Math.pow(1 - i/bufferSize, 2);
-  }
-  const noise = audioCtx.createBufferSource();
-  noise.buffer = buffer;
-  const gain = audioCtx.createGain();
-  noise.connect(gain);
-  gain.connect(audioCtx.destination);
-  gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-  noise.start();
-  noise.stop(audioCtx.currentTime + 1);
+  const times = [0,0.25,0.5];
+  times.forEach(t=>{
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(800, audioCtx.currentTime + t);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    gain.gain.setValueAtTime(0.001, audioCtx.currentTime + t);
+    gain.gain.exponentialRampToValueAtTime(0.3, audioCtx.currentTime + t + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + t + 0.1);
+    osc.start(audioCtx.currentTime + t);
+    osc.stop(audioCtx.currentTime + t + 0.1);
+  });
 }
 
 function startFireworks(){
@@ -272,11 +311,38 @@ function startFireworks(){
 
 canvas.addEventListener('click', spin);
 
+drawButton.addEventListener('click', function(){
+  const active = options.filter(o=>o.active);
+  if(active.length===0) return;
+  if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const result = active[Math.floor(Math.random()*active.length)];
+  showModal(result);
+  playCelebrateSound();
+});
+
+menuWheel.addEventListener('click', function(){
+  title.textContent = 'Lucky Wheel';
+  wheelContainer.style.display = '';
+  addForm.style.display = '';
+  resetButton.style.display = '';
+  optionList.style.display = '';
+  drawContainer.style.display = 'none';
+});
+
+menuDraw.addEventListener('click', function(){
+  title.textContent = 'Lucky Draw';
+  wheelContainer.style.display = 'none';
+  addForm.style.display = 'none';
+  resetButton.style.display = 'none';
+  optionList.style.display = 'none';
+  drawContainer.style.display = 'block';
+});
+
 addForm.addEventListener('submit', function(e){
   e.preventDefault();
   const value = newItemInput.value.trim();
   if(value){
-    options.push({ text: value, active: true, icon: ICONS[Math.floor(Math.random()*ICONS.length)] });
+    options.push({ text: value, active: true, icon: getUniqueIcon() });
     arc = Math.PI * 2 / countActive();
     saveOptions();
     updateOptionList();
@@ -286,7 +352,8 @@ addForm.addEventListener('submit', function(e){
 });
 
 resetButton.addEventListener('click', function(){
-  options = ['Option 1','Option 2','Option 3'].map(t => ({ text: t, active: true, icon: ICONS[Math.floor(Math.random()*ICONS.length)] }));
+  options = ['Option 1','Option 2','Option 3'].map(t => ({ text: t, active: true }));
+  assignUniqueIcons(options);
   arc = Math.PI * 2 / countActive();
   saveOptions();
   updateOptionList();
