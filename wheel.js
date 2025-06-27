@@ -15,8 +15,16 @@ const cardContainer = document.getElementById('cardContainer');
 const wheelContainer = document.getElementById('wheelContainer');
 const title = document.getElementById('title');
 
+function resizeCanvas(){
+  canvas.width = wheelContainer.clientWidth;
+  canvas.height = wheelContainer.clientHeight;
+  drawRouletteWheel();
+}
+
+window.addEventListener('resize', resizeCanvas);
+
 const popupSound = new Audio('clap.wav');
-let muted = false;
+let muted = localStorage.getItem('wheelMuted') === 'true';
 
 function shuffleOptions(){
   for(let i=options.length-1;i>0;i--){
@@ -146,12 +154,14 @@ modalOverlay.addEventListener('click', () => {
 
 function drawRouletteWheel() {
   const active = options.filter(o => o.active);
-  const outsideRadius = 200;
-  const iconRadius = 150;
-  const textRadius = 120;
-  const insideRadius = 50;
+  const size = Math.min(canvas.width, canvas.height);
+  const center = size / 2;
+  const outsideRadius = size * 0.4;
+  const iconRadius = size * 0.3;
+  const textRadius = size * 0.24;
+  const insideRadius = size * 0.1;
 
-  ctx.clearRect(0, 0, 500, 500);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   ctx.strokeStyle = '#666';
   ctx.lineWidth = 1;
@@ -161,14 +171,14 @@ function drawRouletteWheel() {
   for(let i = 0; i < active.length; i++) {
     const angle = startAngle + i * arc;
     const color = getColor(i, active.length);
-    const grad = ctx.createRadialGradient(250,250,insideRadius,250,250,outsideRadius);
+    const grad = ctx.createRadialGradient(center,center,insideRadius,center,center,outsideRadius);
     grad.addColorStop(0, '#fff');
     grad.addColorStop(1, color);
     ctx.fillStyle = grad;
 
     ctx.beginPath();
-    ctx.arc(250, 250, outsideRadius, angle, angle + arc, false);
-    ctx.arc(250, 250, insideRadius, angle + arc, angle, true);
+    ctx.arc(center, center, outsideRadius, angle, angle + arc, false);
+    ctx.arc(center, center, insideRadius, angle + arc, angle, true);
     ctx.stroke();
     ctx.fill();
 
@@ -177,8 +187,8 @@ function drawRouletteWheel() {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.font = '28px "Comic Sans MS", "Trebuchet MS", cursive';
-    ctx.translate(250 + Math.cos(angle + arc / 2) * iconRadius,
-                  250 + Math.sin(angle + arc / 2) * iconRadius);
+    ctx.translate(center + Math.cos(angle + arc / 2) * iconRadius,
+                  center + Math.sin(angle + arc / 2) * iconRadius);
     ctx.rotate(angle + arc / 2 + Math.PI / 2);
     ctx.fillText(active[i].icon, 0, 0);
     ctx.restore();
@@ -188,8 +198,8 @@ function drawRouletteWheel() {
     ctx.font = 'bold 20px "Comic Sans MS", "Trebuchet MS", cursive';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.translate(250 + Math.cos(angle + arc / 2) * textRadius,
-                  250 + Math.sin(angle + arc / 2) * textRadius);
+    ctx.translate(center + Math.cos(angle + arc / 2) * textRadius,
+                  center + Math.sin(angle + arc / 2) * textRadius);
     ctx.rotate(angle + arc / 2 + Math.PI / 2);
     ctx.fillText(active[i].text, 0, 0);
     ctx.restore();
@@ -227,9 +237,10 @@ function rotateWheel() {
 
 function stopRotateWheel() {
   clearTimeout(spinTimeout);
-  const degrees = startAngle * 180 / Math.PI + 90;
+  let degrees = startAngle * 180 / Math.PI + 90;
+  degrees = (degrees % 360 + 360) % 360;
   const arcd = arc * 180 / Math.PI;
-  const index = Math.floor((360 - degrees % 360) / arcd);
+  let index = Math.floor((360 - degrees - 0.0001) / arcd) % countActive();
   const active = options.filter(o => o.active);
   const result = active[index];
   showModal(result, index);
@@ -264,9 +275,10 @@ function playTick(){
 }
 
 function playTickIfNeeded(){
-  const degrees = startAngle * 180 / Math.PI + 90;
+  let degrees = startAngle * 180 / Math.PI + 90;
+  degrees = (degrees % 360 + 360) % 360;
   const arcd = arc * 180 / Math.PI;
-  const index = Math.floor((360 - degrees % 360) / arcd);
+  const index = Math.floor((360 - degrees - 0.0001) / arcd) % countActive();
   if(index !== lastTickIndex){
     playTick();
     lastTickIndex = index;
@@ -478,12 +490,13 @@ resetButton.addEventListener('click', function(){
 muteButton.addEventListener('click', function(){
   muted = !muted;
   muteButton.textContent = muted ? '🔇' : '🔊';
+  localStorage.setItem('wheelMuted', muted);
 });
 
 menuToggle.addEventListener('click', function(){
   menu.classList.toggle('open');
 });
 
-muteButton.textContent = '🔊';
+muteButton.textContent = muted ? '🔇' : '🔊';
 updateOptionList();
-drawRouletteWheel();
+resizeCanvas();
