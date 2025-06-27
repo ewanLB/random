@@ -72,6 +72,36 @@ body {
   cursor: pointer;
 }
 #resetButton { margin-top: 10px; }
+#menu {
+  position: fixed;
+  right: 20px;
+  top: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+#menu button {
+  padding: 8px 12px;
+  font-size: 1em;
+  border: none;
+  border-radius: 4px;
+  background: #ffeaa7;
+  cursor: pointer;
+}
+#drawContainer {
+  margin-top: 20px;
+}
+#lotteryBox {
+  width: 150px;
+  height: 200px;
+  margin: 0 auto 10px;
+  background: #ffcccc;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3em;
+}
 #modalOverlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -101,6 +131,10 @@ body {
 </style>
 </head>
 <body>
+<div id="menu">
+  <button id="menuWheel">Luck Wheel</button>
+  <button id="menuDraw">Luck Draw</button>
+</div>
 <h1 id="title">Lucky Wheel</h1>
 <div id="wheelContainer">
   <canvas id="wheel" width="500" height="500"></canvas>
@@ -112,6 +146,10 @@ body {
 </form>
 <button id="resetButton">Reset</button>
 <ul id="optionList"></ul>
+<div id="drawContainer" style="display:none;">
+  <div id="lotteryBox">🎀</div>
+  <button id="drawButton">Draw</button>
+</div>
 <div id="modalOverlay"><div class="modal" id="modalContent"></div></div>
 <script src="wheel.js"></script>
 </body>
