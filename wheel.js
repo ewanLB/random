@@ -330,7 +330,7 @@ function initCards(){
     front.innerHTML = `<div>${opt.icon}</div><div>${opt.text}</div>`;
     const back = document.createElement('div');
     back.className = 'card-face back';
-    back.textContent = '🎴';
+    back.textContent = '💖';
     inner.appendChild(front);
     inner.appendChild(back);
     card.appendChild(inner);
@@ -346,6 +346,22 @@ function flipAllToBack(){
     setTimeout(()=>{c.classList.add('flipped');}, i*150);
   });
   drawPhase = 'back';
+  const totalTime = cards.length * 150 + 600;
+  setTimeout(shuffleCards, totalTime);
+}
+
+function shuffleCards(){
+  const cards = cardContainer.querySelectorAll('.card');
+  cards.forEach(card => {
+    const x = Math.random()*40 - 20;
+    const y = Math.random()*40 - 20;
+    card.style.setProperty('--sx', `${x}px`);
+    card.style.setProperty('--sy', `${y}px`);
+    card.classList.add('shuffling');
+  });
+  setTimeout(()=>{
+    cards.forEach(card=>card.classList.remove('shuffling'));
+  },600);
 }
 
 function revealCard(card){
@@ -381,7 +397,7 @@ menuWheel.addEventListener('click', function(){
 menuDraw.addEventListener('click', function(){
   title.textContent = 'Lucky Draw';
   wheelContainer.style.display = 'none';
-  cardContainer.style.display = 'flex';
+  cardContainer.style.display = 'grid';
   addForm.style.display = '';
   resetButton.style.display = '';
   optionList.style.display = '';
