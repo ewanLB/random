@@ -8,8 +8,7 @@ const modalOverlay = document.getElementById('modalOverlay');
 const modalContent = document.getElementById('modalContent');
 const menuWheel = document.getElementById('menuWheel');
 const menuDraw = document.getElementById('menuDraw');
-const drawContainer = document.getElementById('drawContainer');
-const drawButton = document.getElementById('drawButton');
+const cardContainer = document.getElementById('cardContainer');
 const wheelContainer = document.getElementById('wheelContainer');
 const title = document.getElementById('title');
 
@@ -103,16 +102,21 @@ function showModal(option) {
   modalContent.innerHTML = `<span class="icon">${option.icon}</span>${option.text}`;
   modalOverlay.style.display = 'flex';
   startFireworks();
+  if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  playFireworksSound();
 }
 
 modalOverlay.addEventListener('click', () => {
   modalOverlay.style.display = 'none';
+  if(cardContainer.style.display !== 'none') {
+    initCards();
+  }
 });
 
 function drawRouletteWheel() {
   const active = options.filter(o => o.active);
   const outsideRadius = 200;
-  const iconRadius = 185;
+  const iconRadius = 150;
   const textRadius = 120;
   const insideRadius = 50;
 
@@ -199,7 +203,6 @@ function stopRotateWheel() {
   const result = active[index];
   showModal(result);
   stopSpinSound();
-  playCelebrateSound();
 }
 
 function easeOut(t, b, c, d) {
@@ -238,21 +241,24 @@ function playTickIfNeeded(){
   }
 }
 
-function playCelebrateSound(){
-  const times = [0,0.25,0.5];
-  times.forEach(t=>{
+function playFireworksSound(){
+  const duration = 2;
+  const numBursts = 5;
+  for(let i=0;i<numBursts;i++){
+    const t = i*0.3;
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(800, audioCtx.currentTime + t);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(200+Math.random()*400, audioCtx.currentTime + t);
+    osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + t + duration/numBursts);
     osc.connect(gain);
     gain.connect(audioCtx.destination);
     gain.gain.setValueAtTime(0.001, audioCtx.currentTime + t);
-    gain.gain.exponentialRampToValueAtTime(0.3, audioCtx.currentTime + t + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + t + 0.1);
+    gain.gain.exponentialRampToValueAtTime(0.4, audioCtx.currentTime + t + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + t + duration/numBursts);
     osc.start(audioCtx.currentTime + t);
-    osc.stop(audioCtx.currentTime + t + 0.1);
-  });
+    osc.stop(audioCtx.currentTime + t + duration/numBursts);
+  }
 }
 
 function startFireworks(){
@@ -309,33 +315,77 @@ function startFireworks(){
   animate();
 }
 
-canvas.addEventListener('click', spin);
+let drawPhase = 'front';
 
-drawButton.addEventListener('click', function(){
+function initCards(){
+  cardContainer.innerHTML = '';
+  const active = options.filter(o=>o.active);
+  active.forEach(opt=>{
+    const card = document.createElement('div');
+    card.className = 'card';
+    const inner = document.createElement('div');
+    inner.className = 'card-inner';
+    const front = document.createElement('div');
+    front.className = 'card-face front';
+    front.innerHTML = `<div>${opt.icon}</div><div>${opt.text}</div>`;
+    const back = document.createElement('div');
+    back.className = 'card-face back';
+    back.textContent = '🎴';
+    inner.appendChild(front);
+    inner.appendChild(back);
+    card.appendChild(inner);
+    cardContainer.appendChild(card);
+    card.addEventListener('click', handleCardClick);
+  });
+  drawPhase = 'front';
+}
+
+function flipAllToBack(){
+  const cards = cardContainer.querySelectorAll('.card');
+  cards.forEach((c,i)=>{
+    setTimeout(()=>{c.classList.add('flipped');}, i*150);
+  });
+  drawPhase = 'back';
+}
+
+function revealCard(card){
   const active = options.filter(o=>o.active);
   if(active.length===0) return;
-  if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   const result = active[Math.floor(Math.random()*active.length)];
+  const front = card.querySelector('.front');
+  front.innerHTML = `<div>${result.icon}</div><div>${result.text}</div>`;
+  card.classList.remove('flipped');
   showModal(result);
-  playCelebrateSound();
-});
+}
+
+function handleCardClick(e){
+  const card = e.currentTarget;
+  if(drawPhase==='front'){
+    flipAllToBack();
+  }else if(drawPhase==='back'){
+    revealCard(card);
+  }
+}
+
+canvas.addEventListener('click', spin);
 
 menuWheel.addEventListener('click', function(){
   title.textContent = 'Lucky Wheel';
   wheelContainer.style.display = '';
+  cardContainer.style.display = 'none';
   addForm.style.display = '';
   resetButton.style.display = '';
   optionList.style.display = '';
-  drawContainer.style.display = 'none';
 });
 
 menuDraw.addEventListener('click', function(){
   title.textContent = 'Lucky Draw';
   wheelContainer.style.display = 'none';
-  addForm.style.display = 'none';
-  resetButton.style.display = 'none';
-  optionList.style.display = 'none';
-  drawContainer.style.display = 'block';
+  cardContainer.style.display = 'flex';
+  addForm.style.display = '';
+  resetButton.style.display = '';
+  optionList.style.display = '';
+  initCards();
 });
 
 addForm.addEventListener('submit', function(e){
