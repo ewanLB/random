@@ -12,6 +12,14 @@ body {
   background:#f7f7f7;
 }
 
+#title {
+  font-family: "Comic Sans MS", "Trebuchet MS", cursive;
+  font-size: 3em;
+  color: #e67e22;
+  text-shadow: 2px 2px #fff, -2px -2px #ddd;
+  margin: 0 0 10px;
+}
+
 #wheelContainer {
   position: relative;
   width: 500px;
@@ -26,24 +34,25 @@ body {
 #arrow {
   position: absolute;
   left: 50%;
-  top: -20px;
+  top: -60px;
   transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 20px solid transparent;
-  border-right: 20px solid transparent;
-  border-bottom: 40px solid #e74c3c;
+  font-size: 60px;
 }
 
 #addForm { margin-top: 20px; }
+#addForm input {
+  padding: 10px;
+  font-size: 1.2em;
+}
 #addForm button,
 #resetButton {
   margin-left: 8px;
-  padding: 6px 12px;
+  padding: 10px 20px;
   border: none;
   border-radius: 4px;
   background: linear-gradient(135deg, #74b9ff, #0984e3);
   color: #fff;
+  font-size: 1.2em;
   cursor: pointer;
 }
 #optionList { list-style: none; padding: 0; margin-top:10px; }
@@ -77,11 +86,16 @@ body {
 }
 #modalOverlay .modal {
   background: #fff;
-  padding: 30px;
+  padding: 40px;
   border-radius: 10px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-  font-size: 1.8em;
+  font-size: 2.2em;
   animation: pop 0.3s ease;
+}
+#modalOverlay .modal .icon {
+  font-size: 1.5em;
+  display: block;
+  margin-bottom: 10px;
 }
 
 @keyframes pop {
@@ -91,9 +105,10 @@ body {
 </style>
 </head>
 <body>
+<h1 id="title">Lucky Wheel</h1>
 <div id="wheelContainer">
   <canvas id="wheel" width="500" height="500"></canvas>
-  <div id="arrow"></div>
+  <div id="arrow">👇</div>
 </div>
 <form id="addForm">
   <input id="newItem" type="text" placeholder="Add option" required>

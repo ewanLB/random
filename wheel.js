@@ -72,9 +72,10 @@ function updateOptionList() {
   });
 }
 
-function showModal(msg) {
-  modalContent.textContent = msg;
+function showModal(option) {
+  modalContent.innerHTML = `<span class="icon">${option.icon}</span>${option.text}`;
   modalOverlay.style.display = 'flex';
+  startFireworks();
 }
 
 modalOverlay.addEventListener('click', () => {
@@ -84,7 +85,7 @@ modalOverlay.addEventListener('click', () => {
 function drawRouletteWheel() {
   const active = options.filter(o => o.active);
   const outsideRadius = 200;
-  const textRadius = 160;
+  const textRadius = 170;
   const insideRadius = 50;
 
   ctx.clearRect(0, 0, 500, 500);
@@ -110,6 +111,7 @@ function drawRouletteWheel() {
 
     ctx.save();
     ctx.fillStyle = 'black';
+    ctx.font = 'bold 24px sans-serif';
     ctx.translate(250 + Math.cos(angle + arc / 2) * textRadius,
                   250 + Math.sin(angle + arc / 2) * textRadius);
     ctx.rotate(angle + arc / 2 + Math.PI / 2);
@@ -160,7 +162,7 @@ function stopRotateWheel() {
   const result = active[index];
   const msg = 'Result: ' + result.text;
   resultDiv.textContent = msg;
-  showModal(msg);
+  showModal(result);
   stopSpinSound();
   playCelebrateSound();
 }
@@ -200,6 +202,60 @@ function playCelebrateSound(){
   gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
   osc.start();
   osc.stop(audioCtx.currentTime + 0.5);
+}
+
+function startFireworks(){
+  const canvas = document.createElement('canvas');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  canvas.style.position = 'fixed';
+  canvas.style.left = 0;
+  canvas.style.top = 0;
+  canvas.style.pointerEvents = 'none';
+  canvas.id = 'fireworks';
+  document.body.appendChild(canvas);
+  const fctx = canvas.getContext('2d');
+  const particles = [];
+  function burst(x,y){
+    for(let i=0;i<20;i++){
+      particles.push({
+        x:x,
+        y:y,
+        vx: Math.cos(i/20*Math.PI*2)*(Math.random()*3+2),
+        vy: Math.sin(i/20*Math.PI*2)*(Math.random()*3+2),
+        alpha:1,
+        color:`hsl(${Math.random()*360},70%,60%)`
+      });
+    }
+  }
+  for(let b=0;b<3;b++){
+    burst(Math.random()*canvas.width, Math.random()*canvas.height/2);
+  }
+  let frame=0;
+  function animate(){
+    fctx.clearRect(0,0,canvas.width,canvas.height);
+    particles.forEach(p=>{
+      p.x+=p.vx;
+      p.y+=p.vy;
+      p.vy+=0.05;
+      p.alpha-=0.01;
+    });
+    particles.filter(p=>p.alpha>0).forEach(p=>{
+      fctx.globalAlpha=p.alpha;
+      fctx.fillStyle=p.color;
+      fctx.beginPath();
+      fctx.arc(p.x,p.y,3,0,Math.PI*2);
+      fctx.fill();
+    });
+    fctx.globalAlpha=1;
+    frame++;
+    if(frame<200){
+      requestAnimationFrame(animate);
+    }else{
+      document.body.removeChild(canvas);
+    }
+  }
+  animate();
 }
 
 canvas.addEventListener('click', spin);
