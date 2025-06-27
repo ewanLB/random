@@ -5,6 +5,8 @@ const newItemInput = document.getElementById('newItem');
 const resultDiv = document.getElementById('result');
 const resetButton = document.getElementById('resetButton');
 const optionList = document.getElementById('optionList');
+const modalOverlay = document.getElementById('modalOverlay');
+const modalContent = document.getElementById('modalContent');
 
 let options = JSON.parse(localStorage.getItem('wheelOptions')) || ['Option 1', 'Option 2', 'Option 3'];
 let startAngle = 0;
@@ -38,6 +40,15 @@ function updateOptionList() {
   });
 }
 
+function showModal(msg) {
+  modalContent.textContent = msg;
+  modalOverlay.style.display = 'flex';
+}
+
+modalOverlay.addEventListener('click', () => {
+  modalOverlay.style.display = 'none';
+});
+
 function drawRouletteWheel() {
   const outsideRadius = 200;
   const textRadius = 160;
@@ -45,12 +56,18 @@ function drawRouletteWheel() {
 
   ctx.clearRect(0, 0, 500, 500);
 
-  ctx.strokeStyle = 'black';
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = '#666';
+  ctx.lineWidth = 1;
+  ctx.shadowColor = 'rgba(0,0,0,0.2)';
+  ctx.shadowBlur = 4;
 
   for(let i = 0; i < options.length; i++) {
     const angle = startAngle + i * arc;
-    ctx.fillStyle = getColor(i, options.length);
+    const color = getColor(i, options.length);
+    const grad = ctx.createRadialGradient(250,250,insideRadius,250,250,outsideRadius);
+    grad.addColorStop(0, '#fff');
+    grad.addColorStop(1, color);
+    ctx.fillStyle = grad;
 
     ctx.beginPath();
     ctx.arc(250, 250, outsideRadius, angle, angle + arc, false);
@@ -68,7 +85,7 @@ function drawRouletteWheel() {
   }
 
   // Arrow
-  ctx.fillStyle = 'black';
+  ctx.fillStyle = '#e74c3c';
   ctx.beginPath();
   ctx.moveTo(250 - 4, 250 - (outsideRadius + 5));
   ctx.lineTo(250 + 4, 250 - (outsideRadius + 5));
@@ -81,22 +98,9 @@ function drawRouletteWheel() {
   ctx.fill();
 }
 
-function byte2Hex(n) {
-  const nybHexString = '0123456789ABCDEF';
-  return String(nybHexString.substr((n >> 4) & 0x0F,1)) + nybHexString.substr(n & 0x0F,1);
-}
-
-function getColor(item, maxitem) {
-  const phase = 0;
-  const center = 128;
-  const width = 127;
-  const frequency = Math.PI*2/maxitem;
-
-  const red   = Math.sin(frequency*item+2+phase) * width + center;
-  const green = Math.sin(frequency*item+0+phase) * width + center;
-  const blue  = Math.sin(frequency*item+4+phase) * width + center;
-
-  return '#' + byte2Hex(red) + byte2Hex(green) + byte2Hex(blue);
+function getColor(index, total) {
+  const hue = index * (360 / total);
+  return `hsl(${hue}, 70%, 80%)`;
 }
 
 function spin() {
@@ -126,7 +130,7 @@ function stopRotateWheel() {
   const index = Math.floor((360 - degrees % 360) / arcd);
   const msg = 'Result: ' + options[index];
   resultDiv.textContent = msg;
-  alert(msg);
+  showModal(msg);
 }
 
 function easeOut(t, b, c, d) {

@@ -5,14 +5,41 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Random Wheel</title>
 <style>
-body { font-family: sans-serif; text-align: center; padding: 20px; }
+body { font-family: sans-serif; text-align: center; padding: 20px; background:#f7f7f7; }
 #wheel { margin: 20px auto; cursor: pointer; }
 #addForm { margin-top: 20px; }
-#optionList { list-style: none; padding: 0; }
-#optionList li { margin: 4px 0; padding: 4px 8px; color: #000; display: flex; justify-content: space-between; align-items: center; }
-#optionList button { margin-left: 10px; }
+#optionList { list-style: none; padding: 0; margin-top:10px; }
+#optionList li {
+  display: inline-flex;
+  align-items: center;
+  margin: 4px;
+  padding: 6px 10px;
+  border-radius: 16px;
+  color: #000;
+  font-size: 0.9em;
+}
+#optionList button {
+  margin-left: 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
 #resetButton { margin-top: 10px; }
 #result { font-size: 1.2em; margin-top: 20px; }
+#modalOverlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+#modalOverlay .modal {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
 </style>
 </head>
 <body>
@@ -24,6 +51,7 @@ body { font-family: sans-serif; text-align: center; padding: 20px; }
 <button id="resetButton">Reset</button>
 <ul id="optionList"></ul>
 <div id="result"></div>
+<div id="modalOverlay"><div class="modal" id="modalContent"></div></div>
 <script src="wheel.js"></script>
 </body>
 </html>
