@@ -88,19 +88,49 @@ body {
   background: #ffeaa7;
   cursor: pointer;
 }
-#drawContainer {
+#cardContainer {
   margin-top: 20px;
-}
-#lotteryBox {
-  width: 150px;
-  height: 200px;
-  margin: 0 auto 10px;
-  background: #ffcccc;
-  border-radius: 10px;
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.card {
+  width: 100px;
+  height: 140px;
+  perspective: 600px;
+  cursor: pointer;
+}
+.card-inner {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+.card.flipped .card-inner {
+  transform: rotateY(180deg);
+}
+.card-face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: 3em;
+  font-size: 1.5em;
+}
+.card-face.front {
+  background: #fff;
+  border: 2px solid #ddd;
+}
+.card-face.back {
+  background: #ffcccc;
+  transform: rotateY(180deg);
+  font-size: 2em;
 }
 #modalOverlay {
   position: fixed;
@@ -132,8 +162,8 @@ body {
 </head>
 <body>
 <div id="menu">
-  <button id="menuWheel">Luck Wheel</button>
-  <button id="menuDraw">Luck Draw</button>
+  <button id="menuWheel">Lucky Wheel</button>
+  <button id="menuDraw">Lucky Draw</button>
 </div>
 <h1 id="title">Lucky Wheel</h1>
 <div id="wheelContainer">
@@ -146,10 +176,7 @@ body {
 </form>
 <button id="resetButton">Reset</button>
 <ul id="optionList"></ul>
-<div id="drawContainer" style="display:none;">
-  <div id="lotteryBox">🎀</div>
-  <button id="drawButton">Draw</button>
-</div>
+<div id="cardContainer" style="display:none;"></div>
 <div id="modalOverlay"><div class="modal" id="modalContent"></div></div>
 <script src="wheel.js"></script>
 </body>
