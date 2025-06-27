@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Random Wheel</title>
+<style>
+body { font-family: sans-serif; text-align: center; padding: 20px; }
+#wheel { margin: 20px auto; }
+#addForm { margin-top: 20px; }
+#result { font-size: 1.2em; margin-top: 20px; }
+</style>
+</head>
+<body>
+<canvas id="wheel" width="500" height="500"></canvas>
+<div>
+  <button id="spinButton">Start</button>
+</div>
+<form id="addForm">
+  <input id="newItem" type="text" placeholder="Add option" required>
+  <button type="submit">Add</button>
+</form>
+<div id="result"></div>
+<script src="wheel.js"></script>
+</body>
+</html>
