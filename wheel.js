@@ -100,12 +100,14 @@ function saveOptions() {
 
 function updateOptionList() {
   optionList.innerHTML = '';
+  const activeCount = countActive();
   options.forEach((opt, index) => {
     const li = document.createElement('li');
     li.style.background = getColor(index, options.length);
 
     const span = document.createElement('span');
-    span.textContent = `${opt.icon} ${opt.text}`;
+    const prob = opt.active && activeCount ? (100/activeCount).toFixed(1) : '0.0';
+    span.textContent = `${opt.icon} ${opt.text} - ${prob}%`;
     li.appendChild(span);
 
     const toggle = document.createElement('input');
@@ -115,6 +117,7 @@ function updateOptionList() {
       opt.active = toggle.checked;
       arc = countActive() > 0 ? Math.PI * 2 / countActive() : Math.PI * 2;
       saveOptions();
+      updateOptionList();
       drawRouletteWheel();
     });
     li.appendChild(toggle);
@@ -212,8 +215,19 @@ function getColor(index, total) {
   return `hsl(${hue}, 70%, 80%)`;
 }
 
-function spin() {
+function spin(e) {
   if(countActive() === 0) return;
+  if(e){
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const size = Math.min(canvas.width, canvas.height);
+    const center = size / 2;
+    const outsideRadius = size * 0.4;
+    const dx = x - center;
+    const dy = y - center;
+    if(dx*dx + dy*dy > outsideRadius * outsideRadius) return;
+  }
   if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   startSpinSound();
   spinAngleStart = Math.random() * 10 + 10;
@@ -237,11 +251,11 @@ function rotateWheel() {
 
 function stopRotateWheel() {
   clearTimeout(spinTimeout);
-  let degrees = startAngle * 180 / Math.PI + 90;
-  degrees = (degrees % 360 + 360) % 360;
-  const arcd = arc * 180 / Math.PI;
-  let index = Math.floor((360 - degrees - 0.0001) / arcd) % countActive();
   const active = options.filter(o => o.active);
+  if(active.length === 0) return;
+  const pointerAngle = Math.PI * 1.5; // arrow at the top
+  const diff = (pointerAngle - (startAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+  const index = Math.floor(diff / arc) % active.length;
   const result = active[index];
   showModal(result, index);
   stopSpinSound();
@@ -275,10 +289,11 @@ function playTick(){
 }
 
 function playTickIfNeeded(){
-  let degrees = startAngle * 180 / Math.PI + 90;
-  degrees = (degrees % 360 + 360) % 360;
-  const arcd = arc * 180 / Math.PI;
-  const index = Math.floor((360 - degrees - 0.0001) / arcd) % countActive();
+  const activeCount = countActive();
+  if(activeCount === 0) return;
+  const pointerAngle = Math.PI * 1.5;
+  const diff = (pointerAngle - (startAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+  const index = Math.floor(diff / arc) % activeCount;
   if(index !== lastTickIndex){
     playTick();
     lastTickIndex = index;
@@ -485,6 +500,9 @@ resetButton.addEventListener('click', function(){
   saveOptions();
   updateOptionList();
   drawRouletteWheel();
+  if(cardContainer.style.display !== 'none'){
+    initCards();
+  }
 });
 
 muteButton.addEventListener('click', function(){
