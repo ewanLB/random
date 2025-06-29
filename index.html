@@ -4,19 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Random Wheel</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/antd@4/dist/antd.min.css" />
+<!-- Removed Ant Design CSS -->
 <style>
 body {
-  font-family: "Comic Sans MS", "Trebuchet MS", cursive;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+               "Helvetica Neue", Arial, sans-serif;
   text-align: center;
   padding: 20px;
-  background:#f7f7f7;
+  background:#fdf6f9;
 }
 
 #title {
-  font-family: "Comic Sans MS", "Trebuchet MS", cursive;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+               "Helvetica Neue", Arial, sans-serif;
   font-size: 3em;
-  color: #e67e22;
+  color: #ff94b8;
   text-shadow: 2px 2px #fff, -2px -2px #ddd;
   margin: 0 0 10px;
 }
@@ -46,18 +48,12 @@ body {
 #addForm input {
   padding: 10px;
   font-size: 1.2em;
+  width: 220px;
 }
 #addForm button,
 #saveButton,
 #resetButton {
   margin-left: 8px;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 4px;
-  background: linear-gradient(135deg, #74b9ff, #0984e3);
-  color: #fff;
-  font-size: 1.2em;
-  cursor: pointer;
 }
 #optionList { list-style: none; padding: 0; margin-top:10px; }
 #optionList li {
@@ -246,6 +242,49 @@ body {
 @keyframes pop {
   from { transform: scale(0.5); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
+}
+
+.ant-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 12px;
+  background: #fff;
+  color: #333;
+  font-size: 1em;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  transition: background 0.2s;
+}
+.ant-btn:hover {
+  background: #f2f2f2;
+}
+.ant-btn-primary {
+  background: linear-gradient(135deg, #ffdce0, #ffe9ec);
+  color: #333;
+}
+.ant-input {
+  padding: 10px;
+  font-size: 1em;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+.ant-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+.ant-modal-root .ant-modal {
+  border-radius: 12px;
+}
+.ant-modal-mask {
+  background-color: rgba(0,0,0,0.4);
+}
+#optionList li input[type="checkbox"] {
+  margin-left: 6px;
 }
 </style>
 </head>
