@@ -7,16 +7,14 @@
 <!-- Removed Ant Design CSS -->
 <style>
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-               "Helvetica Neue", Arial, sans-serif;
+  font-family: "Comic Sans MS", "Comic Neue", "Chalkboard SE", cursive;
   text-align: center;
   padding: 20px;
   background:#f0f2f5;
 }
 
 #title {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-               "Helvetica Neue", Arial, sans-serif;
+  font-family: "Comic Sans MS", "Comic Neue", "Chalkboard SE", cursive;
   font-size: 3em;
   color: #007acc;
   text-shadow: 1px 1px #fff;
@@ -348,6 +346,19 @@ body {
         <div class="ant-modal-footer">
           <button id="groupNameCancel" class="ant-btn">Cancel</button>
           <button id="groupNameOk" class="ant-btn ant-btn-primary">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="saveConfirmModal" class="ant-modal-root" style="display:none;">
+  <div class="ant-modal-mask"></div>
+  <div class="ant-modal-wrap">
+    <div class="ant-modal" style="top:30vh;">
+      <div class="ant-modal-content">
+        <div class="ant-modal-body">Group saved!</div>
+        <div class="ant-modal-footer">
+          <button id="saveConfirmOk" class="ant-btn ant-btn-primary">OK</button>
         </div>
       </div>
     </div>

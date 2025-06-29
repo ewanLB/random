@@ -20,6 +20,8 @@ const groupNameModal = document.getElementById('groupNameModal');
 const groupNameInput = document.getElementById('groupNameInput');
 const groupNameCancel = document.getElementById('groupNameCancel');
 const groupNameOk = document.getElementById('groupNameOk');
+const saveConfirmModal = document.getElementById('saveConfirmModal');
+const saveConfirmOk = document.getElementById('saveConfirmOk');
 
 function resizeCanvas(){
   canvas.width = wheelContainer.clientWidth;
@@ -106,6 +108,14 @@ function openGroupNameModal(){
 
 function closeGroupNameModal(){
   groupNameModal.style.display = 'none';
+}
+
+function openSaveConfirm(){
+  saveConfirmModal.style.display = 'block';
+}
+
+function closeSaveConfirm(){
+  saveConfirmModal.style.display = 'none';
 }
 
 function countActive(){
@@ -603,6 +613,14 @@ groupNameOk.addEventListener('click', function(){
     initCards();
   }
   closeGroupNameModal();
+  openSaveConfirm();
+});
+
+saveConfirmOk.addEventListener('click', closeSaveConfirm);
+saveConfirmModal.addEventListener('click', function(e){
+  if(e.target === saveConfirmModal || e.target.classList.contains('ant-modal-mask')){
+    closeSaveConfirm();
+  }
 });
 
 muteButton.textContent = muted ? '🔇' : '🔊';
