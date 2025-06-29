@@ -16,6 +16,10 @@ const wheelContainer = document.getElementById('wheelContainer');
 const title = document.getElementById('title');
 const saveButton = document.getElementById('saveButton');
 const groupListEl = document.getElementById('groupList');
+const groupNameModal = document.getElementById('groupNameModal');
+const groupNameInput = document.getElementById('groupNameInput');
+const groupNameCancel = document.getElementById('groupNameCancel');
+const groupNameOk = document.getElementById('groupNameOk');
 
 function resizeCanvas(){
   canvas.width = wheelContainer.clientWidth;
@@ -94,6 +98,16 @@ let lastTickIndex = -1;
 
 let groups = JSON.parse(localStorage.getItem('wheelGroups') || '[]');
 
+function openGroupNameModal(){
+  groupNameInput.value = '';
+  groupNameModal.style.display = 'block';
+  groupNameInput.focus();
+}
+
+function closeGroupNameModal(){
+  groupNameModal.style.display = 'none';
+}
+
 function countActive(){
   return options.filter(o => o.active).length;
 }
@@ -127,6 +141,7 @@ function updateOptionList() {
     li.appendChild(toggle);
 
     const del = document.createElement('button');
+    del.className = 'ant-btn ant-btn-link';
     del.textContent = 'x';
     del.addEventListener('click', () => {
       options.splice(index, 1);
@@ -151,9 +166,11 @@ function updateGroupList(){
     const li = document.createElement('li');
     li.textContent = g.name;
     const loadBtn = document.createElement('button');
+    loadBtn.className = 'ant-btn ant-btn-primary ant-btn-sm';
     loadBtn.textContent = 'Load';
     loadBtn.addEventListener('click', () => loadGroup(idx));
     const delBtn = document.createElement('button');
+    delBtn.className = 'ant-btn ant-btn-link ant-btn-sm';
     delBtn.textContent = 'x';
     delBtn.addEventListener('click', () => deleteGroup(idx));
     li.appendChild(loadBtn);
@@ -559,9 +576,21 @@ menuToggle.addEventListener('click', function(){
   menu.classList.toggle('open');
 });
 
-saveButton.addEventListener('click', function(){
-  const name = prompt('Enter group name');
-  if(!name) return;
+saveButton.addEventListener('click', openGroupNameModal);
+
+groupNameCancel.addEventListener('click', closeGroupNameModal);
+groupNameModal.addEventListener('click', function(e){
+  if(e.target === groupNameModal || e.target.classList.contains('ant-modal-mask')){
+    closeGroupNameModal();
+  }
+});
+
+groupNameOk.addEventListener('click', function(){
+  const name = groupNameInput.value.trim();
+  if(!name){
+    closeGroupNameModal();
+    return;
+  }
   groups.push({ name, options: JSON.parse(JSON.stringify(options)) });
   saveGroups();
   updateGroupList();
@@ -573,6 +602,7 @@ saveButton.addEventListener('click', function(){
   if(cardContainer.style.display !== 'none'){
     initCards();
   }
+  closeGroupNameModal();
 });
 
 muteButton.textContent = muted ? '🔇' : '🔊';
