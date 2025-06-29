@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Random Wheel</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/antd@4/dist/antd.min.css" />
 <style>
 body {
   font-family: "Comic Sans MS", "Trebuchet MS", cursive;
@@ -81,10 +82,6 @@ body {
   right: 20px;
   top: 40px;
   z-index: 1000;
-  background: #ffe6f2;
-  padding: 10px;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 #menuItems {
   display: flex;
@@ -94,13 +91,7 @@ body {
 }
 #menuItems button,
 #menuToggle {
-  padding: 8px 12px;
-  font-size: 1em;
-  border: none;
-  border-radius: 20px;
-  background: linear-gradient(135deg, #ff9ec4, #ffb6c1);
-  color: #fff;
-  cursor: pointer;
+  margin-bottom: 4px;
 }
 #menuToggle {
   display: none;
@@ -109,26 +100,12 @@ body {
   position: fixed;
   right: 20px;
   bottom: 20px;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: #ffeaa7;
-  border: none;
-  font-size: 1.2em;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 #groupPanel {
   position: fixed;
   left: 20px;
   top: 40px;
-  background: #ffe6f2;
-  padding: 10px;
-  border-radius: 8px;
   text-align: left;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-  font-family: "Comic Sans MS", "Trebuchet MS", cursive;
 }
 #groupList {
   list-style: none;
@@ -145,13 +122,6 @@ body {
 }
 #groupList button {
   margin-left: 6px;
-  padding: 6px 12px;
-  border: none;
-  border-radius: 4px;
-  background: linear-gradient(135deg, #74b9ff, #0984e3);
-  color: #fff;
-  font-size: 1em;
-  cursor: pointer;
 }
 .card {
   width: 150px;
@@ -261,10 +231,6 @@ body {
     position: absolute;
     right: 0;
     top: 40px;
-    background: #ffe6f2;
-    padding: 10px;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     z-index: 1000;
   }
   #menu.open #menuItems {
@@ -284,17 +250,17 @@ body {
 </style>
 </head>
 <body>
-<div id="groupPanel">
+<div id="groupPanel" class="ant-card">
   <ul id="groupList"></ul>
 </div>
-<div id="menu">
-  <button id="menuToggle">☰</button>
+<div id="menu" class="ant-card">
+  <button id="menuToggle" class="ant-btn ant-btn-primary">☰</button>
   <div id="menuItems">
-    <button id="menuWheel">Lucky Wheel</button>
-    <button id="menuDraw">Lucky Draw</button>
+    <button id="menuWheel" class="ant-btn">Lucky Wheel</button>
+    <button id="menuDraw" class="ant-btn">Lucky Draw</button>
   </div>
 </div>
-<button id="muteButton">🔊</button>
+<button id="muteButton" class="ant-btn">🔊</button>
 <h1 id="title">Lucky Wheel</h1>
 <div id="cardContainer" style="display:none;"></div>
 <div id="wheelContainer">
@@ -302,13 +268,32 @@ body {
   <div id="arrow">👇</div>
 </div>
 <form id="addForm">
-  <input id="newItem" type="text" placeholder="Add option" required>
-  <button type="submit">Add</button>
+  <input id="newItem" type="text" placeholder="Add option" required class="ant-input">
+  <button type="submit" class="ant-btn ant-btn-primary">Add</button>
 </form>
-<button id="saveButton">Save</button>
-<button id="resetButton">Reset</button>
+<button id="saveButton" class="ant-btn">Save</button>
+<button id="resetButton" class="ant-btn">Reset</button>
 <ul id="optionList"></ul>
 <div id="modalOverlay"><div class="modal" id="modalContent"></div></div>
+<div id="groupNameModal" class="ant-modal-root" style="display:none;">
+  <div class="ant-modal-mask"></div>
+  <div class="ant-modal-wrap">
+    <div class="ant-modal" style="top:20vh;">
+      <div class="ant-modal-content">
+        <div class="ant-modal-header">
+          <div class="ant-modal-title">Save Group</div>
+        </div>
+        <div class="ant-modal-body">
+          <input id="groupNameInput" class="ant-input" placeholder="Group name" />
+        </div>
+        <div class="ant-modal-footer">
+          <button id="groupNameCancel" class="ant-btn">Cancel</button>
+          <button id="groupNameOk" class="ant-btn ant-btn-primary">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 <script src="wheel.js"></script>
 </body>
 </html>
