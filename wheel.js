@@ -14,6 +14,8 @@ const muteButton = document.getElementById('muteButton');
 const cardContainer = document.getElementById('cardContainer');
 const wheelContainer = document.getElementById('wheelContainer');
 const title = document.getElementById('title');
+const saveButton = document.getElementById('saveButton');
+const groupListEl = document.getElementById('groupList');
 
 function resizeCanvas(){
   canvas.width = wheelContainer.clientWidth;
@@ -90,6 +92,8 @@ let spinTimeTotal = 0;
 let audioCtx;
 let lastTickIndex = -1;
 
+let groups = JSON.parse(localStorage.getItem('wheelGroups') || '[]');
+
 function countActive(){
   return options.filter(o => o.active).length;
 }
@@ -135,6 +139,46 @@ function updateOptionList() {
 
     optionList.appendChild(li);
   });
+}
+
+function saveGroups(){
+  localStorage.setItem('wheelGroups', JSON.stringify(groups));
+}
+
+function updateGroupList(){
+  groupListEl.innerHTML = '';
+  groups.forEach((g, idx) => {
+    const li = document.createElement('li');
+    li.textContent = g.name;
+    const loadBtn = document.createElement('button');
+    loadBtn.textContent = 'Load';
+    loadBtn.addEventListener('click', () => loadGroup(idx));
+    const delBtn = document.createElement('button');
+    delBtn.textContent = 'x';
+    delBtn.addEventListener('click', () => deleteGroup(idx));
+    li.appendChild(loadBtn);
+    li.appendChild(delBtn);
+    groupListEl.appendChild(li);
+  });
+}
+
+function loadGroup(idx){
+  const grp = groups[idx];
+  if(!grp) return;
+  options = JSON.parse(JSON.stringify(grp.options));
+  arc = countActive() > 0 ? Math.PI * 2 / countActive() : Math.PI * 2;
+  saveOptions();
+  updateOptionList();
+  drawRouletteWheel();
+  if(cardContainer.style.display !== 'none'){
+    initCards();
+  }
+}
+
+function deleteGroup(idx){
+  groups.splice(idx,1);
+  saveGroups();
+  updateGroupList();
 }
 
 function showModal(option, index) {
@@ -515,6 +559,23 @@ menuToggle.addEventListener('click', function(){
   menu.classList.toggle('open');
 });
 
+saveButton.addEventListener('click', function(){
+  const name = prompt('Enter group name');
+  if(!name) return;
+  groups.push({ name, options: JSON.parse(JSON.stringify(options)) });
+  saveGroups();
+  updateGroupList();
+  options = [];
+  arc = countActive() > 0 ? Math.PI * 2 / countActive() : Math.PI * 2;
+  saveOptions();
+  updateOptionList();
+  drawRouletteWheel();
+  if(cardContainer.style.display !== 'none'){
+    initCards();
+  }
+});
+
 muteButton.textContent = muted ? '🔇' : '🔊';
 updateOptionList();
+updateGroupList();
 resizeCanvas();

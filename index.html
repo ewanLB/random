@@ -47,6 +47,7 @@ body {
   font-size: 1.2em;
 }
 #addForm button,
+#saveButton,
 #resetButton {
   margin-left: 8px;
   padding: 10px 20px;
@@ -73,7 +74,8 @@ body {
   border: none;
   cursor: pointer;
 }
-#resetButton { margin-top: 10px; }
+#resetButton,
+#saveButton { margin-top: 10px; }
 #menu {
   position: fixed;
   right: 20px;
@@ -111,6 +113,28 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+#groupPanel {
+  position: fixed;
+  left: 20px;
+  top: 40px;
+  background: #ffeaa7;
+  padding: 10px;
+  border-radius: 4px;
+  text-align: left;
+}
+#groupList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+#groupList li {
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+}
+#groupList button {
+  margin-left: 6px;
 }
 .card {
   width: 150px;
@@ -228,6 +252,11 @@ body {
   #menu.open #menuItems {
     display: flex;
   }
+  #groupPanel {
+    top: auto;
+    bottom: 20px;
+    left: 10px;
+  }
 }
 
 @keyframes pop {
@@ -237,6 +266,9 @@ body {
 </style>
 </head>
 <body>
+<div id="groupPanel">
+  <ul id="groupList"></ul>
+</div>
 <div id="menu">
   <button id="menuToggle">☰</button>
   <div id="menuItems">
@@ -255,6 +287,7 @@ body {
   <input id="newItem" type="text" placeholder="Add option" required>
   <button type="submit">Add</button>
 </form>
+<button id="saveButton">Save</button>
 <button id="resetButton">Reset</button>
 <ul id="optionList"></ul>
 <div id="modalOverlay"><div class="modal" id="modalContent"></div></div>

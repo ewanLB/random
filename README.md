@@ -11,5 +11,6 @@ and spin a wheel to randomly choose one.
 - Options can be toggled on/off without deletion
 - Each option is displayed with a random emoji icon
 - Results are shown in a pop-up modal
+- Save sets of options into named groups for later loading
 
 Open `index.html` in a browser or deploy it via GitHub Pages to use it.
