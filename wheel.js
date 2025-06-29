@@ -250,7 +250,7 @@ function drawRouletteWheel() {
     ctx.fillStyle = 'black';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.font = '28px "Comic Sans MS", "Trebuchet MS", cursive';
+    ctx.font = '28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
     ctx.translate(center + Math.cos(angle + arc / 2) * iconRadius,
                   center + Math.sin(angle + arc / 2) * iconRadius);
     ctx.rotate(angle + arc / 2 + Math.PI / 2);
@@ -259,7 +259,7 @@ function drawRouletteWheel() {
 
     ctx.save();
     ctx.fillStyle = 'black';
-    ctx.font = 'bold 20px "Comic Sans MS", "Trebuchet MS", cursive';
+    ctx.font = 'bold 20px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.translate(center + Math.cos(angle + arc / 2) * textRadius,
