@@ -81,6 +81,10 @@ body {
   right: 20px;
   top: 40px;
   z-index: 1000;
+  background: #ffe6f2;
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 #menuItems {
   display: flex;
@@ -93,8 +97,9 @@ body {
   padding: 8px 12px;
   font-size: 1em;
   border: none;
-  border-radius: 4px;
-  background: #ffeaa7;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #ff9ec4, #ffb6c1);
+  color: #fff;
   cursor: pointer;
 }
 #menuToggle {
@@ -118,10 +123,12 @@ body {
   position: fixed;
   left: 20px;
   top: 40px;
-  background: #ffeaa7;
+  background: #ffe6f2;
   padding: 10px;
-  border-radius: 4px;
+  border-radius: 8px;
   text-align: left;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  font-family: "Comic Sans MS", "Trebuchet MS", cursive;
 }
 #groupList {
   list-style: none;
@@ -132,9 +139,19 @@ body {
   margin-bottom: 6px;
   display: flex;
   align-items: center;
+  background: #fff;
+  padding: 4px 8px;
+  border-radius: 12px;
 }
 #groupList button {
   margin-left: 6px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #74b9ff, #0984e3);
+  color: #fff;
+  font-size: 1em;
+  cursor: pointer;
 }
 .card {
   width: 150px;
@@ -244,9 +261,10 @@ body {
     position: absolute;
     right: 0;
     top: 40px;
-    background: #ffeaa7;
+    background: #ffe6f2;
     padding: 10px;
-    border-radius: 4px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     z-index: 1000;
   }
   #menu.open #menuItems {
