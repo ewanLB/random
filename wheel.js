@@ -102,7 +102,7 @@ let groups = JSON.parse(localStorage.getItem('wheelGroups') || '[]');
 
 function openGroupNameModal(){
   groupNameInput.value = '';
-  groupNameModal.style.display = 'block';
+  groupNameModal.style.display = 'flex';
   groupNameInput.focus();
 }
 
@@ -111,7 +111,7 @@ function closeGroupNameModal(){
 }
 
 function openSaveConfirm(){
-  saveConfirmModal.style.display = 'block';
+  saveConfirmModal.style.display = 'flex';
 }
 
 function closeSaveConfirm(){
