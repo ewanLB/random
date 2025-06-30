@@ -34,9 +34,23 @@ window.addEventListener('resize', resizeCanvas);
 const popupSound = new Audio('clap.wav');
 let muted = localStorage.getItem('wheelMuted') === 'true';
 
+function cryptoRandom(){
+  const array = new Uint32Array(1);
+  window.crypto.getRandomValues(array);
+  return array[0] / 2**32;
+}
+
+function getRandomFloat(min, max){
+  return min + cryptoRandom() * (max - min);
+}
+
+function getRandomInt(min, max){
+  return Math.floor(getRandomFloat(min, max));
+}
+
 function shuffleOptions(){
   for(let i=options.length-1;i>0;i--){
-    const j=Math.floor(Math.random()*(i+1));
+    const j=getRandomInt(0, i+1);
     [options[i],options[j]]=[options[j],options[i]];
   }
 }
@@ -63,15 +77,15 @@ function getAvailableIcons(){
 
 function getUniqueIcon(){
   const avail = getAvailableIcons();
-  if(avail.length === 0) return ICONS[Math.floor(Math.random()*ICONS.length)];
-  return avail[Math.floor(Math.random()*avail.length)];
+  if(avail.length === 0) return ICONS[getRandomInt(0, ICONS.length)];
+  return avail[getRandomInt(0, avail.length)];
 }
 
 function assignUniqueIcons(arr){
   const used = new Set();
   arr.forEach(o=>{
     const pool = ICONS.filter(ic => !used.has(ic));
-    o.icon = pool.length ? pool[Math.floor(Math.random()*pool.length)] : ICONS[Math.floor(Math.random()*ICONS.length)];
+    o.icon = pool.length ? pool[getRandomInt(0, pool.length)] : ICONS[getRandomInt(0, ICONS.length)];
     used.add(o.icon);
   });
 }
@@ -301,9 +315,9 @@ function spin(e) {
   }
   if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   startSpinSound();
-  spinAngleStart = Math.random() * 10 + 10;
+  spinAngleStart = getRandomFloat(10, 20);
   spinTime = 0;
-  spinTimeTotal = Math.random() * 3000 + 4000;
+  spinTimeTotal = getRandomFloat(4000, 7000);
   rotateWheel();
 }
 
@@ -380,7 +394,7 @@ function playFireworksSound(){
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(200+Math.random()*400, audioCtx.currentTime + t);
+    osc.frequency.setValueAtTime(200+getRandomFloat(0,400), audioCtx.currentTime + t);
     osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + t + duration/numBursts);
     osc.connect(gain);
     gain.connect(audioCtx.destination);
@@ -409,15 +423,15 @@ function startFireworks(){
       particles.push({
         x:x,
         y:y,
-        vx: Math.cos(i/20*Math.PI*2)*(Math.random()*3+2),
-        vy: Math.sin(i/20*Math.PI*2)*(Math.random()*3+2),
+        vx: Math.cos(i/20*Math.PI*2)*(getRandomFloat(2,5)),
+        vy: Math.sin(i/20*Math.PI*2)*(getRandomFloat(2,5)),
         alpha:1,
-        color:`hsl(${Math.random()*360},70%,60%)`
+        color:`hsl(${getRandomFloat(0,360)},70%,60%)`
       });
     }
   }
   for(let b=0;b<3;b++){
-    burst(Math.random()*canvas.width, Math.random()*canvas.height/2);
+    burst(getRandomFloat(0, canvas.width), getRandomFloat(0, canvas.height/2));
   }
   let frame=0;
   function animate(){
@@ -451,7 +465,7 @@ let drawPhase = 'front';
 function initCards(){
   cardContainer.innerHTML = '';
   const active = options.filter(o=>o.active);
-  const shuffled = active.slice().sort(()=>Math.random()-0.5);
+  const shuffled = active.slice().sort(()=>getRandomFloat(-0.5,0.5));
   shuffled.forEach((opt)=>{
     const card = document.createElement('div');
     card.className = 'card';
@@ -487,7 +501,7 @@ function flipAllToBack(){
 function shuffleCards(done){
   const cards = Array.from(cardContainer.querySelectorAll('.card'));
   const rects = cards.map(c=>c.getBoundingClientRect());
-  const order = rects.map((_,i)=>i).sort(()=>Math.random()-0.5);
+  const order = rects.map((_,i)=>i).sort(()=>getRandomFloat(-0.5,0.5));
   cards.forEach((card,i)=>{
     const dx = rects[order[i]].left - rects[i].left;
     const dy = rects[order[i]].top - rects[i].top;
@@ -507,7 +521,7 @@ function shuffleCards(done){
 function revealCard(card){
   const active = options.filter(o=>o.active);
   if(active.length===0) return;
-  const result = active[Math.floor(Math.random()*active.length)];
+  const result = active[getRandomInt(0, active.length)];
   const front = card.querySelector('.front');
   front.innerHTML = `<div>${result.icon}</div><div>${result.text}</div>`;
   const index = active.indexOf(result);
