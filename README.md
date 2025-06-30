@@ -15,3 +15,12 @@ and spin a wheel to randomly choose one.
 - Uses `window.crypto.getRandomValues` for stronger randomness
 
 Open `index.html` in a browser or deploy it via GitHub Pages to use it.
+
+## Icons
+
+The wheel uses the following emoji icons by default:
+
+🍀 🌟 🍭 🍉 🍣 🧩 🎈 🐱 🐶 🐻
+
+You can replace them by editing the `ICONS` array in `wheel.js` or by
+changing each option's icon directly in the list.

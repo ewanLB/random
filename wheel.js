@@ -147,10 +147,35 @@ function updateOptionList() {
     const li = document.createElement('li');
     li.style.background = getColor(index, options.length);
 
-    const span = document.createElement('span');
+    const iconInput = document.createElement('input');
+    iconInput.type = 'text';
+    iconInput.value = opt.icon;
+    iconInput.maxLength = 2;
+    iconInput.className = 'ant-input icon-input';
+    iconInput.addEventListener('input', () => {
+      opt.icon = iconInput.value;
+      saveOptions();
+      drawRouletteWheel();
+      if(cardContainer.style.display !== 'none') initCards();
+    });
+    li.appendChild(iconInput);
+
+    const textInput = document.createElement('input');
+    textInput.type = 'text';
+    textInput.value = opt.text;
+    textInput.className = 'ant-input';
+    textInput.addEventListener('input', () => {
+      opt.text = textInput.value;
+      saveOptions();
+      drawRouletteWheel();
+      if(cardContainer.style.display !== 'none') initCards();
+    });
+    li.appendChild(textInput);
+
+    const probSpan = document.createElement('span');
     const prob = opt.active && activeCount ? (100/activeCount).toFixed(1) : '0.0';
-    span.textContent = `${opt.icon} ${opt.text} - ${prob}%`;
-    li.appendChild(span);
+    probSpan.textContent = ` - ${prob}%`;
+    li.appendChild(probSpan);
 
     const toggle = document.createElement('input');
     toggle.type = 'checkbox';
@@ -178,6 +203,9 @@ function updateOptionList() {
 
     optionList.appendChild(li);
   });
+  if(cardContainer.style.display !== 'none') {
+    initCards();
+  }
 }
 
 function saveGroups(){
