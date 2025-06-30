@@ -4,6 +4,7 @@ const addForm = document.getElementById('addForm');
 const newItemInput = document.getElementById('newItem');
 const resetButton = document.getElementById('resetButton');
 const optionList = document.getElementById('optionList');
+const iconList = document.getElementById('iconList');
 const modalOverlay = document.getElementById('modalOverlay');
 const modalContent = document.getElementById('modalContent');
 const menuWheel = document.getElementById('menuWheel');
@@ -206,6 +207,21 @@ function updateOptionList() {
   if(cardContainer.style.display !== 'none') {
     initCards();
   }
+  updateIconList();
+}
+
+function updateIconList(){
+  iconList.innerHTML = '';
+  const used = [];
+  options.forEach(o => {
+    if(!used.includes(o.icon)) used.push(o.icon);
+  });
+  used.forEach(ic => {
+    const span = document.createElement('span');
+    span.textContent = ic;
+    span.style.margin = '0 4px';
+    iconList.appendChild(span);
+  });
 }
 
 function saveGroups(){
