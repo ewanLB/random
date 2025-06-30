@@ -12,5 +12,6 @@ and spin a wheel to randomly choose one.
 - Each option is displayed with a random emoji icon
 - Results are shown in a pop-up modal
 - Save sets of options into named groups for later loading
+- Uses `window.crypto.getRandomValues` for stronger randomness
 
 Open `index.html` in a browser or deploy it via GitHub Pages to use it.
