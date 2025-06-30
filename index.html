@@ -63,6 +63,20 @@ body {
   color: #000;
   font-size: 1.2em;
 }
+#iconList {
+  margin-top: 8px;
+  font-size: 2em;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+#optionList li input[type="text"],
+#optionList li .icon-input {
+  background: rgba(255, 255, 255, 0.6);
+  border: none;
+  border-radius: 6px;
+  padding: 2px 4px;
+}
 #optionList button {
   margin-left: 8px;
   background: transparent;
@@ -351,6 +365,7 @@ body {
 <button id="saveButton" class="ant-btn">Save</button>
 <button id="resetButton" class="ant-btn">Reset</button>
 <ul id="optionList"></ul>
+<div id="iconList"></div>
 <div id="modalOverlay"><div class="modal" id="modalContent"></div></div>
 <div id="groupNameModal" class="ant-modal-root" style="display:none;">
   <div class="ant-modal-mask"></div>
