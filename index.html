@@ -37,9 +37,14 @@ body {
 #arrow {
   position: absolute;
   left: 50%;
-  top: -30px;
-  transform: translateX(-50%);
-  font-size: 60px;
+  top: 50%;
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 30px solid #333;
+  transform: translate(-50%, -100%);
+  pointer-events: none;
 }
 
 #addForm { margin-top: 20px; }
@@ -220,8 +225,9 @@ body {
     height: 100%;
   }
   #arrow {
-    font-size: 10vw;
-    top: -8vw;
+    border-left-width: 5vw;
+    border-right-width: 5vw;
+    border-top-width: 8vw;
   }
   #cardContainer {
     grid-template-columns: repeat(4, 22vw);
@@ -356,7 +362,7 @@ body {
 <div id="cardContainer" style="display:none;"></div>
 <div id="wheelContainer">
   <canvas id="wheel" width="500" height="500"></canvas>
-  <div id="arrow">👇</div>
+  <div id="arrow"></div>
 </div>
 <form id="addForm">
   <input id="newItem" type="text" placeholder="Add option" required class="ant-input">

@@ -382,7 +382,7 @@ function stopRotateWheel() {
   clearTimeout(spinTimeout);
   const active = options.filter(o => o.active);
   if(active.length === 0) return;
-  const pointerAngle = Math.PI * 1.5; // arrow at the top
+  const pointerAngle = Math.PI * 1.5; // arrow pointing upward from center
   const diff = (pointerAngle - (startAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
   const index = Math.floor(diff / arc) % active.length;
   const result = active[index];
@@ -420,7 +420,7 @@ function playTick(){
 function playTickIfNeeded(){
   const activeCount = countActive();
   if(activeCount === 0) return;
-  const pointerAngle = Math.PI * 1.5;
+  const pointerAngle = Math.PI * 1.5; // arrow pointing upward from center
   const diff = (pointerAngle - (startAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
   const index = Math.floor(diff / arc) % activeCount;
   if(index !== lastTickIndex){
