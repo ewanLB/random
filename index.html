@@ -38,13 +38,22 @@ body {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 0;
-  height: 0;
-  border-left: 15px solid transparent;
-  border-right: 15px solid transparent;
-  border-bottom: 30px solid #333;
-  transform: translate(-50%, -50%) rotate(180deg);
+  width: 4px;
+  height: 45%;
+  background: #333;
+  transform-origin: bottom center;
+  transform: translate(-50%, -100%);
   pointer-events: none;
+}
+#arrow::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translate(-50%, -100%);
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-bottom: 15px solid #333;
 }
 
 #addForm { margin-top: 20px; }
@@ -225,12 +234,18 @@ body {
     height: 100%;
   }
   #arrow {
-    border-left-width: 5vw;
-    border-right-width: 5vw;
-    border-bottom-width: 8vw;
+    width: 4px;
+    height: 45%;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%) rotate(180deg);
+    background: #333;
+    transform-origin: bottom center;
+    transform: translate(-50%, -100%);
+  }
+  #arrow::after {
+    border-left-width: 4vw;
+    border-right-width: 4vw;
+    border-bottom-width: 6vw;
   }
   #cardContainer {
     grid-template-columns: repeat(4, 22vw);

@@ -387,8 +387,6 @@ function stopRotateWheel() {
   const diff = (pointerAngle - (startAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
   const index = Math.floor(diff / arc) % active.length;
   const result = active[index];
-  const targetAngle = startAngle + index * arc + arc / 2;
-  arrowEl.style.transform = `translate(-50%, -50%) rotate(${targetAngle - Math.PI / 2}rad)`;
   showModal(result, index);
   stopSpinSound();
 }
