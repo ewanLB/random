@@ -660,7 +660,13 @@ groupNameOk.addEventListener('click', function(){
     closeGroupNameModal();
     return;
   }
-  groups.push({ name, options: JSON.parse(JSON.stringify(options)) });
+  const existingIdx = groups.findIndex(g => g.name === name);
+  const groupData = { name, options: JSON.parse(JSON.stringify(options)) };
+  if(existingIdx >= 0){
+    groups[existingIdx] = groupData;
+  } else {
+    groups.push(groupData);
+  }
   saveGroups();
   updateGroupList();
   options = [];
