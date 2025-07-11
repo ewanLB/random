@@ -660,7 +660,8 @@ groupNameOk.addEventListener('click', function(){
     closeGroupNameModal();
     return;
   }
-  const existingIdx = groups.findIndex(g => g.name === name);
+  const normalized = name.toLowerCase();
+  const existingIdx = groups.findIndex(g => g.name.trim().toLowerCase() === normalized);
   const groupData = { name, options: JSON.parse(JSON.stringify(options)) };
   if(existingIdx >= 0){
     groups[existingIdx] = groupData;
