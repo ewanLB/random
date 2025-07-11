@@ -37,13 +37,13 @@ body {
 #arrow {
   position: absolute;
   left: 50%;
-  top: calc(10% - 30px);
+  top: 50%;
   width: 0;
   height: 0;
   border-left: 15px solid transparent;
   border-right: 15px solid transparent;
   border-bottom: 30px solid #333;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%) rotate(180deg);
   pointer-events: none;
 }
 
@@ -228,7 +228,9 @@ body {
     border-left-width: 5vw;
     border-right-width: 5vw;
     border-bottom-width: 8vw;
-    top: calc(10% - 8vw);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(180deg);
   }
   #cardContainer {
     grid-template-columns: repeat(4, 22vw);
