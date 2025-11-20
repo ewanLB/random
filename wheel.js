@@ -295,16 +295,16 @@ function drawRouletteWheel() {
   const active = options.filter(o => o.active);
   const size = Math.min(canvas.width, canvas.height);
   const center = size / 2;
-  const outsideRadius = size * 0.45; // Slightly larger
+  const outsideRadius = size * 0.45;
   const iconRadius = size * 0.35;
   const textRadius = size * 0.28;
-  const insideRadius = size * 0.05; // Smaller hole
+  const insideRadius = size * 0.08; // Slightly larger gold hub
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Soft shadow for the wheel
-  ctx.shadowColor = 'rgba(0,0,0,0.1)';
-  ctx.shadowBlur = 20;
+  // Rich shadow
+  ctx.shadowColor = 'rgba(0,0,0,0.8)';
+  ctx.shadowBlur = 25;
   ctx.shadowOffsetX = 0;
   ctx.shadowOffsetY = 10;
 
@@ -312,29 +312,33 @@ function drawRouletteWheel() {
     const angle = startAngle + i * arc;
     const color = getColor(i, active.length);
 
-    ctx.fillStyle = color;
+    // Gradient for depth
+    const grad = ctx.createRadialGradient(center, center, insideRadius, center, center, outsideRadius);
+    grad.addColorStop(0, color);
+    grad.addColorStop(1, shadeColor(color, -40)); // Darken at edges
+    ctx.fillStyle = grad;
 
-    // Draw segment
     ctx.beginPath();
     ctx.arc(center, center, outsideRadius, angle, angle + arc, false);
     ctx.arc(center, center, insideRadius, angle + arc, angle, true);
     ctx.fill();
 
-    // White borders for glass effect
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-    ctx.lineWidth = 4;
+    // Gold borders
+    ctx.strokeStyle = '#d4af37';
+    ctx.lineWidth = 2;
     ctx.stroke();
 
     ctx.save();
 
-    // Text & Icon
-    ctx.shadowColor = 'transparent'; // Remove shadow for text
-    ctx.fillStyle = '#4a5568'; // Dark grey for contrast
+    // Text & Icon - Gold/White
+    ctx.shadowColor = 'rgba(0,0,0,0.8)';
+    ctx.shadowBlur = 4;
+    ctx.fillStyle = '#fff';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
     // Icon
-    ctx.font = '32px "Inter", sans-serif';
+    ctx.font = '32px "Playfair Display", serif';
     ctx.translate(center + Math.cos(angle + arc / 2) * iconRadius,
       center + Math.sin(angle + arc / 2) * iconRadius);
     ctx.rotate(angle + arc / 2 + Math.PI / 2);
@@ -343,8 +347,8 @@ function drawRouletteWheel() {
 
     ctx.save();
     // Text
-    ctx.fillStyle = '#4a5568';
-    ctx.font = 'bold 18px "Inter", sans-serif';
+    ctx.fillStyle = '#f0f0f0';
+    ctx.font = 'bold 18px "Playfair Display", serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.translate(center + Math.cos(angle + arc / 2) * textRadius,
@@ -354,20 +358,37 @@ function drawRouletteWheel() {
     ctx.restore();
   }
 
-  // Outer ring (Glassy)
+  // Outer Gold Ring
   ctx.save();
   ctx.beginPath();
   ctx.arc(center, center, outsideRadius, 0, Math.PI * 2);
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-  ctx.lineWidth = 8;
+  ctx.strokeStyle = '#d4af37';
+  ctx.lineWidth = 10;
+  ctx.stroke();
+  // Inner Gold Hub
+  ctx.beginPath();
+  ctx.arc(center, center, insideRadius, 0, Math.PI * 2);
+  ctx.fillStyle = 'radial-gradient(circle, #fcf6ba, #bf953f)';
+  ctx.fill();
   ctx.stroke();
   ctx.restore();
 }
 
+function shadeColor(color, percent) {
+  // Helper to darken/lighten hex or hsl? 
+  // Since getColor returns HSL, let's just return the color for now or handle HSL parsing.
+  // Actually, let's just use a simple radial gradient in draw loop that assumes the base color is valid.
+  // But wait, getColor returns HSL string. Canvas gradient stops handle that fine.
+  // To darken HSL string "hsl(h, s%, l%)", we can regex replace l%.
+  return color.replace(/(\d+)%\)/, (match, p1) => Math.max(0, parseInt(p1) + percent) + '%)');
+}
+
 function getColor(index, total) {
-  // Pastel colors: High lightness, moderate saturation
+  // Jewel Tones: Rich, Deep, Saturated
+  // Ruby (340), Emerald (140), Sapphire (230), Amethyst (270), Gold (45)
+  // Let's generate a rich spectrum but keep lightness low (40-50%) and saturation high (80-100%)
   const hue = index * (360 / total);
-  return `hsl(${hue}, 85%, 85%)`;
+  return `hsl(${hue}, 85%, 45%)`;
 }
 
 function spin(e) {
