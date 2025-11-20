@@ -1,428 +1,617 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Random Wheel</title>
-<!-- Removed Ant Design CSS -->
-<style>
-body {
-  font-family: "Comic Sans MS", "Comic Neue", "Chalkboard SE", cursive;
-  text-align: center;
-  padding: 20px;
-  background:#f0f2f5;
-}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Random Wheel</title>
+  <!-- Removed Ant Design CSS -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --glass-bg: rgba(255, 255, 255, 0.2);
+      --glass-border: rgba(255, 255, 255, 0.3);
+      --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+      --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --text-color: #2d3748;
+    }
 
-#title {
-  font-family: "Comic Sans MS", "Comic Neue", "Chalkboard SE", cursive;
-  font-size: 3em;
-  color: #007acc;
-  text-shadow: 1px 1px #fff;
-  margin: 0 0 10px;
-}
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      text-align: center;
+      padding: 20px;
+      background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
+      min-height: 100vh;
+      color: var(--text-color);
+      margin: 0;
+    }
 
-#wheelContainer {
-  position: relative;
-  width: 500px;
-  height: 500px;
-  margin: 20px auto;
-}
+    #title {
+      font-family: 'Inter', sans-serif;
+      font-weight: 800;
+      font-size: 3.5em;
+      color: #fff;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      margin: 10px 0 30px;
+    }
 
-#wheel {
-  cursor: pointer;
-  width: 100%;
-  height: 100%;
-}
+    #wheelContainer {
+      position: relative;
+      width: 500px;
+      height: 500px;
+      margin: 20px auto;
+      filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.15));
+    }
 
-#arrow {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 4px;
-  height: 8%;
-  background: #333;
-  transform-origin: bottom center;
-  transform: translate(-50%, -100%);
-  pointer-events: none;
-}
-#arrow::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 0;
-  transform: translate(-50%, -100%);
-  border-left: 10px solid transparent;
-  border-right: 10px solid transparent;
-  border-bottom: 15px solid #333;
-}
+    #wheel {
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.3s ease;
+    }
 
-#addForm { margin-top: 20px; }
-#addForm input {
-  padding: 10px;
-  font-size: 1.2em;
-  width: 220px;
-}
-#addForm button,
-#saveButton,
-#resetButton {
-  margin-left: 8px;
-}
-#optionList { list-style: none; padding: 0; margin-top:10px; }
-#optionList li {
-  display: inline-flex;
-  align-items: center;
-  margin: 4px;
-  padding: 6px 10px;
-  border-radius: 16px;
-  color: #000;
-  font-size: 1.2em;
-}
-#iconList {
-  margin-top: 8px;
-  font-size: 2em;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-#optionList li input[type="text"],
-#optionList li .icon-input {
-  background: rgba(255, 255, 255, 0.6);
-  border: none;
-  border-radius: 6px;
-  padding: 2px 4px;
-}
-#optionList button {
-  margin-left: 8px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-}
-#resetButton,
-#saveButton { margin-top: 10px; }
-#menu {
-  position: fixed;
-  right: 20px;
-  top: 40px;
-  z-index: 1000;
-}
-#menuItems {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  z-index: 1000;
-}
-#menuItems button,
-#menuToggle {
-  margin-bottom: 4px;
-}
-#menuToggle {
-  display: none;
-}
-#muteButton {
-  position: fixed;
-  right: 20px;
-  bottom: 20px;
-}
-#groupPanel {
-  position: fixed;
-  left: 20px;
-  top: 40px;
-  text-align: left;
-}
-#groupList {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-#groupList li {
-  margin-bottom: 6px;
-  display: flex;
-  align-items: center;
-  background: #f9f9f9;
-  padding: 4px 8px;
-  border-radius: 12px;
-}
-#groupList button {
-  margin-left: 6px;
-}
-.card {
-  width: 150px;
-  height: 200px;
-  perspective: 600px;
-  cursor: pointer;
-  position: relative;
-}
-.card-inner {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  transition: transform 0.6s;
-  transform-style: preserve-3d;
-}
-#cardContainer {
-  margin-top: 20px;
-  display: grid;
-  grid-template-columns: repeat(4, 150px);
-  justify-content: center;
-  gap: 20px;
-}
-.card.flipped .card-inner {
-  transform: rotateY(180deg);
-}
-.card-face {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  backface-visibility: hidden;
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5em;
-}
-.card-face.front {
-  background: var(--bg, #fff);
-  border: 2px solid #ddd;
-}
-.card-face.back {
-  background: linear-gradient(135deg, #6db3f2, #1e69de);
-  transform: rotateY(180deg);
-  font-size: 2.5em;
-}
+    #wheel:hover {
+      transform: scale(1.02);
+    }
 
-@keyframes shuffle {
-  0%,100% { transform: translate(0,0); }
-  50% { transform: translate(var(--sx), var(--sy)); }
-}
+    #arrow {
+      position: absolute;
+      left: 50%;
+      top: -15px;
+      /* Moved to top for modern look */
+      width: 40px;
+      height: 50px;
+      background: transparent;
+      transform: translateX(-50%);
+      pointer-events: none;
+      z-index: 10;
+      filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.2));
+    }
 
-.card.shuffling {
-  animation: shuffle 0.6s ease;
-}
-#modalOverlay {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.5);
-  display: none;
-  align-items: center;
-  justify-content: center;
-}
-#modalOverlay .modal {
-  background: #fff;
-  padding: 40px;
-  border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-  font-size: 2.2em;
-  animation: pop 0.3s ease;
-}
-#modalOverlay .modal .icon {
-  font-size: 1.5em;
-  display: block;
-  margin-bottom: 10px;
-}
+    #arrow::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 0;
+      transform: translateX(-50%);
+      border-left: 20px solid transparent;
+      border-right: 20px solid transparent;
+      border-top: 40px solid #fff;
+      /* White arrow pointing down */
+      border-bottom: none;
+    }
 
-@media (max-width: 600px) {
-  #title {
-    font-size: 2em;
-  }
-  #wheelContainer {
-    width: 90vw;
-    height: 90vw;
-  }
-  #wheel {
-    width: 100%;
-    height: 100%;
-  }
-  #arrow {
-    width: 4px;
-    height: 3vw;
-    top: 50%;
-    left: 50%;
-    background: #333;
-    transform-origin: bottom center;
-    transform: translate(-50%, -100%);
-  }
-  #arrow::after {
-    border-left-width: 4vw;
-    border-right-width: 4vw;
-    border-bottom-width: 6vw;
-  }
-  #cardContainer {
-    grid-template-columns: repeat(4, 22vw);
-    gap: 2vw;
-  }
-  .card {
-    width: 22vw;
-    height: 30vw;
-  }
-  #menuToggle {
-    display: block;
-  }
-  #menuItems {
-    display: none;
-    position: absolute;
-    right: 0;
-    top: 40px;
-    z-index: 1000;
-  }
-  #menu.open #menuItems {
-    display: flex;
-  }
-  #groupPanel {
-    top: auto;
-    bottom: 20px;
-    left: 10px;
-  }
-}
+    #controlsContainer {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-top: 30px;
+    }
 
-@keyframes pop {
-  from { transform: scale(0.5); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
+    #addForm {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+    }
 
-.ant-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 16px;
-  border: none;
-  border-radius: 12px;
-  background: #fff;
-  color: #333;
-  font-size: 1em;
-  cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  transition: background 0.2s;
-}
-.ant-btn:hover {
-  background: #f2f2f2;
-}
-.ant-btn-primary {
-  background: linear-gradient(135deg, #6db3f2, #1e69de);
-  color: #fff;
-}
-.ant-input {
-  padding: 10px;
-  font-size: 1em;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-}
-.ant-card {
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 12px;
-  padding: 10px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
-.ant-modal-root {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-}
-.ant-modal-root .ant-modal {
-  border-radius: 12px;
-}
-.ant-modal-content {
-  background: #fff;
-  padding: 20px;
-  border-radius: 12px;
-}
-.ant-modal-header {
-  border-bottom: none;
-  margin-bottom: 10px;
-}
-.ant-modal-title {
-  color: #007acc;
-}
-.ant-modal-footer {
-  text-align: right;
-}
-.ant-modal-footer .ant-btn-primary {
-  background: linear-gradient(135deg, #6db3f2, #1e69de);
-  color: #fff;
-}
-.ant-modal-mask {
-  background-color: rgba(0,0,0,0.4);
-}
-#optionList li input[type="checkbox"] {
-  margin-left: 6px;
-}
-#optionList li input[type="text"] {
-  margin-left: 6px;
-  width: 120px;
-}
-#optionList li .icon-input {
-  margin-left: 6px;
-  width: 32px;
-  text-align: center;
-}
-</style>
+    #addForm input {
+      width: 220px;
+    }
+
+    #optionList {
+      list-style: none;
+      padding: 0;
+      margin: 20px auto;
+      max-width: 800px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    #optionList li {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 16px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: #2d3748;
+      font-size: 1.1em;
+      font-weight: 500;
+      transition: transform 0.2s;
+    }
+
+    #optionList li:hover {
+      transform: scale(1.05);
+      background: rgba(255, 255, 255, 0.8);
+    }
+
+    #iconList {
+      margin-top: 20px;
+      font-size: 2em;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    #optionList li input[type="text"],
+    #optionList li .icon-input {
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 0;
+      padding: 2px 4px;
+      font-family: inherit;
+      color: inherit;
+    }
+
+    #optionList li input[type="text"]:focus,
+    #optionList li .icon-input:focus {
+      border-bottom: 1px solid #4facfe;
+      outline: none;
+    }
+
+    #optionList button {
+      margin-left: 8px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 1.2em;
+      color: #e53e3e;
+      opacity: 0.7;
+    }
+
+    #optionList button:hover {
+      opacity: 1;
+    }
+
+    /* Glassmorphism Classes (Replacing Ant Design styles visually) */
+    .ant-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 15px;
+      box-shadow: var(--glass-shadow);
+    }
+
+    .ant-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 24px;
+      border: none;
+      border-radius: 15px;
+      background: rgba(255, 255, 255, 0.7);
+      color: #4a5568;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(5px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .ant-btn:hover {
+      transform: translateY(-2px);
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .ant-btn-primary {
+      background: var(--primary-gradient);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(118, 75, 162, 0.4);
+    }
+
+    .ant-btn-primary:hover {
+      background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+      box-shadow: 0 6px 20px rgba(118, 75, 162, 0.6);
+    }
+
+    .ant-input {
+      padding: 12px 20px;
+      font-size: 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      border-radius: 15px;
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(5px);
+      transition: all 0.3s ease;
+      outline: none;
+      color: #333;
+    }
+
+    .ant-input:focus {
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+    }
+
+    /* Menus & Panels */
+    #menu {
+      position: fixed;
+      right: 20px;
+      top: 20px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+
+    #menuItems {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    #menuItems button,
+    #menuToggle {
+      margin-bottom: 0;
+    }
+
+    #menuToggle {
+      display: none;
+    }
+
+    #muteButton {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+    }
+
+    #groupPanel {
+      position: fixed;
+      left: 20px;
+      top: 20px;
+      max-height: 80vh;
+      overflow-y: auto;
+      width: 250px;
+      text-align: left;
+    }
+
+    #groupList {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    #groupList li {
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.4);
+      padding: 8px 12px;
+      border-radius: 12px;
+      transition: background 0.2s;
+    }
+
+    #groupList li:hover {
+      background: rgba(255, 255, 255, 0.7);
+    }
+
+    #groupList button {
+      margin-left: 6px;
+    }
+
+    /* Modals */
+    .ant-modal-root {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+
+    .ant-modal-mask {
+      background-color: rgba(20, 20, 40, 0.4);
+      backdrop-filter: blur(4px);
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+    }
+
+    .ant-modal-wrap {
+      position: relative;
+      z-index: 1;
+    }
+
+    .ant-modal-content {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+      border-radius: 24px;
+      padding: 30px;
+      min-width: 300px;
+    }
+
+    .ant-modal-header {
+      border-bottom: none;
+      margin-bottom: 15px;
+    }
+
+    .ant-modal-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #2d3748;
+    }
+
+    .ant-modal-footer {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    /* Winner Modal */
+    #modalOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 3000;
+    }
+
+    #modalOverlay .modal {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      padding: 50px;
+      border-radius: 30px;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+      font-size: 3em;
+      font-weight: 800;
+      color: #2d3748;
+      animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    #modalOverlay .modal .icon {
+      font-size: 1.5em;
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    /* Cards (Lucky Draw) */
+    .card {
+      width: 150px;
+      height: 200px;
+      perspective: 600px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .card-inner {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transition: transform 0.6s;
+      transform-style: preserve-3d;
+    }
+
+    #cardContainer {
+      margin-top: 20px;
+      display: grid;
+      grid-template-columns: repeat(4, 150px);
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .card.flipped .card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .card-face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border-radius: 15px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5em;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-face.front {
+      background: var(--bg, #fff);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+    }
+
+    .card-face.back {
+      background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      color: white;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      transform: rotateY(180deg);
+      font-size: 2.5em;
+    }
+
+    @keyframes shuffle {
+
+      0%,
+      100% {
+        transform: translate(0, 0);
+      }
+
+      50% {
+        transform: translate(var(--sx), var(--sy));
+      }
+    }
+
+    .card.shuffling {
+      animation: shuffle 0.6s ease;
+    }
+
+    @media (max-width: 600px) {
+      #title {
+        font-size: 2.5em;
+      }
+
+      #wheelContainer {
+        width: 90vw;
+        height: 90vw;
+      }
+
+      #wheel {
+        width: 100%;
+        height: 100%;
+      }
+
+      #arrow {
+        width: 40px;
+        height: 50px;
+        top: -15px;
+      }
+
+      #cardContainer {
+        grid-template-columns: repeat(2, 40vw);
+        gap: 4vw;
+      }
+
+      .card {
+        width: 40vw;
+        height: 55vw;
+      }
+
+      #menuToggle {
+        display: block;
+      }
+
+      #menuItems {
+        display: none;
+        position: absolute;
+        right: 0;
+        top: 40px;
+        z-index: 1000;
+      }
+
+      #menu:hover #menuItems,
+      /* Fallback if JS toggle fails */
+      #menu.open #menuItems {
+        display: flex;
+      }
+
+      #groupPanel {
+        display: none;
+        /* Hide on mobile for simplicity */
+      }
+    }
+
+    @keyframes pop {
+      from {
+        transform: scale(0.8) translateY(20px);
+        opacity: 0;
+      }
+
+      to {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+      }
+    }
+
+    #optionList li input[type="checkbox"] {
+      margin-left: 6px;
+      accent-color: #764ba2;
+    }
+
+    #optionList li input[type="text"] {
+      margin-left: 6px;
+      width: 120px;
+    }
+
+    #optionList li .icon-input {
+      margin-left: 6px;
+      width: 32px;
+      text-align: center;
+    }
+  </style>
 </head>
+
 <body>
-<div id="groupPanel" class="ant-card">
-  <ul id="groupList"></ul>
-</div>
-<div id="menu" class="ant-card">
-  <button id="menuToggle" class="ant-btn ant-btn-primary">☰</button>
-  <div id="menuItems">
-    <button id="menuWheel" class="ant-btn">Lucky Wheel</button>
-    <button id="menuDraw" class="ant-btn">Lucky Draw</button>
+  <div id="groupPanel" class="ant-card">
+    <ul id="groupList"></ul>
   </div>
-</div>
-<button id="muteButton" class="ant-btn">🔊</button>
-<h1 id="title">Lucky Wheel</h1>
-<div id="cardContainer" style="display:none;"></div>
-<div id="wheelContainer">
-  <canvas id="wheel" width="500" height="500"></canvas>
-  <div id="arrow"></div>
-</div>
-<form id="addForm">
-  <input id="newItem" type="text" placeholder="Add option" required class="ant-input">
-  <button type="submit" class="ant-btn ant-btn-primary">Add</button>
-</form>
-<button id="saveButton" class="ant-btn">Save</button>
-<button id="resetButton" class="ant-btn">Reset</button>
-<ul id="optionList"></ul>
-<div id="iconList"></div>
-<div id="modalOverlay"><div class="modal" id="modalContent"></div></div>
-<div id="groupNameModal" class="ant-modal-root" style="display:none;">
-  <div class="ant-modal-mask"></div>
-  <div class="ant-modal-wrap">
-    <div class="ant-modal" style="top:20vh;">
-      <div class="ant-modal-content">
-        <div class="ant-modal-header">
-          <div class="ant-modal-title">Save Group</div>
-        </div>
-        <div class="ant-modal-body">
-          <input id="groupNameInput" class="ant-input" placeholder="Group name" />
-        </div>
-        <div class="ant-modal-footer">
-          <button id="groupNameCancel" class="ant-btn">Cancel</button>
-          <button id="groupNameOk" class="ant-btn ant-btn-primary">OK</button>
+  <div id="menu" class="ant-card">
+    <button id="menuToggle" class="ant-btn ant-btn-primary">☰</button>
+    <div id="menuItems">
+      <button id="menuWheel" class="ant-btn">Lucky Wheel</button>
+      <button id="menuDraw" class="ant-btn">Lucky Draw</button>
+    </div>
+  </div>
+  <button id="muteButton" class="ant-btn">🔊</button>
+  <h1 id="title">Lucky Wheel</h1>
+  <div id="cardContainer" style="display:none;"></div>
+  <div id="wheelContainer">
+    <canvas id="wheel" width="500" height="500"></canvas>
+    <div id="arrow"></div>
+  </div>
+  <div id="controlsContainer">
+    <form id="addForm">
+      <input id="newItem" type="text" placeholder="Add option" required class="ant-input">
+      <button type="submit" class="ant-btn ant-btn-primary">Add</button>
+    </form>
+    <button id="saveButton" class="ant-btn">Save</button>
+    <button id="resetButton" class="ant-btn">Reset</button>
+  </div>
+  <ul id="optionList"></ul>
+  <div id="iconList"></div>
+  <div id="modalOverlay">
+    <div class="modal" id="modalContent"></div>
+  </div>
+  <div id="groupNameModal" class="ant-modal-root" style="display:none;">
+    <div class="ant-modal-mask"></div>
+    <div class="ant-modal-wrap">
+      <div class="ant-modal" style="top:20vh;">
+        <div class="ant-modal-content">
+          <div class="ant-modal-header">
+            <div class="ant-modal-title">Save Group</div>
+          </div>
+          <div class="ant-modal-body">
+            <input id="groupNameInput" class="ant-input" placeholder="Group name" />
+          </div>
+          <div class="ant-modal-footer">
+            <button id="groupNameCancel" class="ant-btn">Cancel</button>
+            <button id="groupNameOk" class="ant-btn ant-btn-primary">OK</button>
+          </div>
         </div>
       </div>
     </div>
   </div>
-</div>
-<div id="saveConfirmModal" class="ant-modal-root" style="display:none;">
-  <div class="ant-modal-mask"></div>
-  <div class="ant-modal-wrap">
-    <div class="ant-modal" style="top:30vh;">
-      <div class="ant-modal-content">
-        <div class="ant-modal-body">Group saved!</div>
-        <div class="ant-modal-footer">
-          <button id="saveConfirmOk" class="ant-btn ant-btn-primary">OK</button>
+  <div id="saveConfirmModal" class="ant-modal-root" style="display:none;">
+    <div class="ant-modal-mask"></div>
+    <div class="ant-modal-wrap">
+      <div class="ant-modal" style="top:30vh;">
+        <div class="ant-modal-content">
+          <div class="ant-modal-body">Group saved!</div>
+          <div class="ant-modal-footer">
+            <button id="saveConfirmOk" class="ant-btn ant-btn-primary">OK</button>
+          </div>
         </div>
       </div>
     </div>
   </div>
-</div>
-<script src="wheel.js"></script>
+  <script src="wheel.js"></script>
 </body>
+
 </html>
