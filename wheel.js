@@ -137,6 +137,7 @@ if (stored && stored.length) {
 }
 shuffleOptions();
 assignUniqueIcons(options);
+sortOptions();
 let startAngle = 0;
 let arc = Math.PI * 2 / countActive();
 let spinTimeout = null;
