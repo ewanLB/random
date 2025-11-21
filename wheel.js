@@ -25,8 +25,16 @@ const saveConfirmModal = document.getElementById('saveConfirmModal');
 const saveConfirmOk = document.getElementById('saveConfirmOk');
 const arrowEl = document.getElementById("arrow");
 const themeSelect = document.getElementById('themeSelect');
+const menuCard = document.getElementById('menuCard');
+const menuSlot = document.getElementById('menuSlot');
+const controlsContainer = document.getElementById('controlsContainer');
+const slotContainer = document.getElementById('slotContainer');
+const spinSlotBtn = document.getElementById('spinSlotBtn');
+const groupPanel = document.getElementById('groupPanel');
+
 
 let currentTheme = localStorage.getItem('wheelTheme') || 'glass';
+let currentMode = localStorage.getItem('wheelMode') || 'wheel'; // 'wheel', 'card', 'slot'
 document.body.dataset.theme = currentTheme;
 if (themeSelect) {
   themeSelect.value = currentTheme;
@@ -37,7 +45,8 @@ if (themeSelect) {
     drawRouletteWheel();
     updateOptionList();
     updateGroupList();
-    if (cardContainer.style.display !== 'none') initCards();
+    if (currentMode === 'card') initCards();
+    if (currentMode === 'slot') initSlot();
   });
 }
 
@@ -181,7 +190,8 @@ function updateOptionList() {
       opt.icon = iconInput.value;
       saveOptions();
       drawRouletteWheel();
-      if (cardContainer.style.display !== 'none') initCards();
+      if (currentMode === 'card') initCards();
+      if (currentMode === 'slot') initSlot();
     });
     li.appendChild(iconInput);
 
@@ -193,7 +203,8 @@ function updateOptionList() {
       opt.text = textInput.value;
       saveOptions();
       drawRouletteWheel();
-      if (cardContainer.style.display !== 'none') initCards();
+      if (currentMode === 'card') initCards();
+      if (currentMode === 'slot') initSlot();
     });
     li.appendChild(textInput);
 
@@ -229,8 +240,11 @@ function updateOptionList() {
 
     optionList.appendChild(li);
   });
-  if (cardContainer.style.display !== 'none') {
+  if (currentMode === 'card') {
     initCards();
+  }
+  if (currentMode === 'slot') {
+    initSlot();
   }
   updateIconList();
 }
@@ -256,10 +270,10 @@ function saveGroups() {
 function updateGroupList() {
   groupListEl.innerHTML = '';
   if (groups.length === 0) {
-    document.getElementById('groupPanel').style.display = 'none';
+    groupPanel.style.display = 'none';
     return;
   }
-  document.getElementById('groupPanel').style.display = 'block';
+  groupPanel.style.display = 'block';
 
   groups.forEach((g, idx) => {
     const li = document.createElement('li');
@@ -298,8 +312,11 @@ function loadGroup(idx) {
   saveOptions();
   updateOptionList();
   drawRouletteWheel();
-  if (cardContainer.style.display !== 'none') {
+  if (currentMode === 'card') {
     initCards();
+  }
+  if (currentMode === 'slot') {
+    initSlot();
   }
 }
 
@@ -322,9 +339,10 @@ function showModal(option, index) {
 
 modalOverlay.addEventListener('click', () => {
   modalOverlay.style.display = 'none';
-  if (cardContainer.style.display !== 'none') {
+  if (currentMode === 'card') {
     initCards();
   }
+  // Slot mode does not reset on close, keeps the winner visible
 });
 
 function drawRouletteWheel() {
@@ -375,7 +393,8 @@ function drawRouletteWheel() {
 
   for (let i = 0; i < active.length; i++) {
     const angle = startAngle + i * arc;
-    const color = getColor(i, active.length);
+    const originalIndex = options.indexOf(active[i]);
+    const color = getColor(originalIndex, options.length);
 
     ctx.fillStyle = color;
 
@@ -693,8 +712,8 @@ function initCards() {
     const front = document.createElement('div');
     front.className = 'card-face front';
     front.innerHTML = `<div>${opt.icon}</div><div>${opt.text}</div>`;
-    const index = active.indexOf(opt);
-    front.style.setProperty('--bg', getColor(index, active.length));
+    const index = options.indexOf(opt);
+    front.style.setProperty('--bg', getColor(index, options.length));
     const back = document.createElement('div');
     back.className = 'card-face back';
     back.textContent = '💖';
@@ -743,8 +762,8 @@ function revealCard(card) {
   const result = active[getRandomInt(0, active.length)];
   const front = card.querySelector('.front');
   front.innerHTML = `<div>${result.icon}</div><div>${result.text}</div>`;
-  const index = active.indexOf(result);
-  front.style.setProperty('--bg', getColor(index, active.length));
+  const index = options.indexOf(result);
+  front.style.setProperty('--bg', getColor(index, options.length));
   card.classList.remove('flipped');
   playFlipSound();
   showModal(result, index);
@@ -762,24 +781,177 @@ function handleCardClick(e) {
 
 canvas.addEventListener('click', spin);
 
-menuWheel.addEventListener('click', function () {
+// Slot Machine Logic
+function initSlot() {
+  const active = options.filter(o => o.active);
+  if (active.length === 0) return;
+
+  ['reel1', 'reel2', 'reel3'].forEach(id => {
+    const reel = document.getElementById(id);
+    reel.innerHTML = '';
+    const strip = document.createElement('div');
+    strip.className = 'reel-strip';
+
+    // Create a long strip of duplicated options for scrolling effect
+    // We need enough items to scroll comfortably. 
+    // Let's repeat the active list multiple times.
+    const repeatCount = Math.ceil(30 / active.length) + 2; // Ensure at least ~30 items
+
+    for (let i = 0; i < repeatCount; i++) {
+      active.forEach((opt, index) => {
+        const item = document.createElement('div');
+        item.className = 'reel-item';
+
+        // Create content container for styling
+        const content = document.createElement('div');
+        content.className = 'reel-item-content';
+        content.textContent = opt.icon;
+        const originalIndex = options.indexOf(opt);
+        content.style.background = getColor(originalIndex, options.length);
+
+        item.appendChild(content);
+        strip.appendChild(item);
+      });
+    }
+    reel.appendChild(strip);
+    // Reset transform
+    strip.style.transform = 'translateY(0)';
+    strip.style.transition = 'none';
+  });
+}
+
+function playWinSound() {
+  if (muted) return;
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.2);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.5);
+}
+
+function spinSlot() {
+  const active = options.filter(o => o.active);
+  if (active.length === 0) return;
+
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  startSpinSound();
+
+  // Pick a winner
+  const winnerIndex = getRandomInt(0, active.length);
+  const winner = active[winnerIndex];
+
+  // Calculate scroll distance
+  // We want to land on the winner.
+  // The strip has many repeats. Let's land on a specific repeat index deep in the strip.
+  // Item height is 150px.
+  const itemHeight = 150;
+
+  // Target index in the strip (e.g., somewhere in the middle-end)
+  // We need to find the Nth occurrence of the winner in the strip.
+  // Let's aim for the 5th repeat or so.
+  const targetRepeat = 5;
+  const targetIndex = (targetRepeat * active.length) + winnerIndex;
+
+  // Calculate Y offset. 
+  // We want the target item to be centered.
+  // The reel height is 150px. The item height is 150px.
+  // So translate to -targetIndex * 150.
+  const translateY = -(targetIndex * itemHeight);
+
+  ['reel1', 'reel2', 'reel3'].forEach((id, idx) => {
+    const reel = document.getElementById(id);
+    const strip = reel.querySelector('.reel-strip');
+
+    // Reset first to 0 (seamless if we constructed it right, but for now just jump)
+    strip.style.transition = 'none';
+    strip.style.transform = 'translateY(0)';
+
+    // Force reflow
+    void strip.offsetWidth;
+
+    // Animate
+    // Add delay for each reel
+    const duration = 2 + (idx * 0.5); // 2s, 2.5s, 3s
+    strip.style.transition = `transform ${duration}s cubic-bezier(0.25, 0.1, 0.25, 1)`;
+    strip.style.transform = `translateY(${translateY}px)`;
+  });
+
+  // Show modal after last reel finishes
+  setTimeout(() => {
+    stopSpinSound();
+    playWinSound();
+    showModal(winner, winnerIndex);
+  }, 3000); // Max duration
+}
+
+const slotLever = document.getElementById('slotLever');
+if (slotLever) {
+  slotLever.addEventListener('click', () => {
+    if (slotLever.classList.contains('pulled')) return; // Prevent double click
+
+    slotLever.classList.add('pulled');
+
+    // Wait for animation down
+    setTimeout(() => {
+      spinSlot();
+
+      // Reset lever after a short delay
+      setTimeout(() => {
+        slotLever.classList.remove('pulled');
+      }, 500);
+    }, 300);
+  });
+}
+
+// Menu Navigation
+menuWheel.addEventListener('click', () => {
+  currentMode = 'wheel';
+  localStorage.setItem('wheelMode', 'wheel');
   title.textContent = 'Lucky Wheel';
-  wheelContainer.style.display = '';
+  wheelContainer.style.display = 'block';
+  controlsContainer.style.display = 'flex';
   cardContainer.style.display = 'none';
+  slotContainer.style.display = 'none';
   addForm.style.display = '';
   resetButton.style.display = '';
   optionList.style.display = '';
   menu.classList.remove('open');
 });
 
-menuDraw.addEventListener('click', function () {
+menuCard.addEventListener('click', () => {
+  currentMode = 'card';
+  localStorage.setItem('wheelMode', 'card');
   title.textContent = 'Lucky Draw';
   wheelContainer.style.display = 'none';
+  controlsContainer.style.display = 'flex';
   cardContainer.style.display = 'grid';
+  slotContainer.style.display = 'none';
   addForm.style.display = '';
   resetButton.style.display = '';
   optionList.style.display = '';
   initCards();
+  menu.classList.remove('open');
+});
+
+menuSlot.addEventListener('click', () => {
+  currentMode = 'slot';
+  localStorage.setItem('wheelMode', 'slot');
+  title.textContent = 'Lucky Slot';
+  wheelContainer.style.display = 'none';
+  controlsContainer.style.display = 'flex';
+  cardContainer.style.display = 'none';
+  slotContainer.style.display = 'flex';
+  addForm.style.display = '';
+  resetButton.style.display = '';
+  optionList.style.display = '';
+  initSlot();
   menu.classList.remove('open');
 });
 
@@ -866,4 +1038,16 @@ saveConfirmModal.addEventListener('click', function (e) {
 muteButton.textContent = muted ? '🔇' : '🔊';
 updateOptionList();
 updateGroupList();
+muteButton.textContent = muted ? '🔇' : '🔊';
+updateOptionList();
+updateGroupList();
 resizeCanvas();
+
+// Restore mode
+if (currentMode === 'card') {
+  menuCard.click();
+} else if (currentMode === 'slot') {
+  menuSlot.click();
+} else {
+  menuWheel.click();
+}

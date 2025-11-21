@@ -671,6 +671,180 @@
       color: #000;
     }
 
+    /* Slot Machine */
+    #slotContainer {
+      display: flex;
+      flex-direction: row;
+      /* Changed to row for lever */
+      align-items: center;
+      justify-content: center;
+      margin-top: 40px;
+      perspective: 1000px;
+      gap: 20px;
+    }
+
+    #slotMachine {
+      display: flex;
+      gap: 20px;
+      padding: 20px;
+      border-radius: 15px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .reel {
+      width: 100px;
+      height: 150px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      position: relative;
+      box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);
+      font-size: 3em;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .reel-strip {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: transform 3s cubic-bezier(0.25, 0.1, 0.25, 1);
+    }
+
+    .reel-item {
+      height: 150px;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8em;
+      /* Adjust for emoji size */
+    }
+
+    .reel-item-content {
+      /* Added this selector based on the provided snippet */
+      width: 80px;
+      /* Fixed width for centering */
+      height: 80px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 35px auto;
+      /* Center vertically in 150px height */
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      color: #fff;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Slot Lever */
+    #slotLever {
+      width: 40px;
+      height: 200px;
+      position: relative;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+
+    .lever-base {
+      width: 40px;
+      height: 100px;
+      background: linear-gradient(to right, #555, #333, #555);
+      border-radius: 5px;
+      position: absolute;
+      bottom: 0;
+      box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+    }
+
+    .lever-stick {
+      width: 10px;
+      height: 100px;
+      background: linear-gradient(to right, #ccc, #999, #ccc);
+      position: absolute;
+      bottom: 80px;
+      left: 15px;
+      transform-origin: bottom center;
+      transition: transform 0.5s cubic-bezier(0.5, 0, 0.5, 1);
+    }
+
+    .lever-ball {
+      width: 40px;
+      height: 40px;
+      background: radial-gradient(circle at 30% 30%, #ff4d4d, #cc0000);
+      border-radius: 50%;
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Lever Animation */
+    #slotLever.pulled .lever-stick {
+      transform: rotateX(60deg);
+    }
+
+    #slotControls {
+      margin-top: 30px;
+    }
+
+    /* Slot Themes */
+    /* Casino */
+    [data-theme="casino"] #slotMachine {
+      background: #330000;
+      border: 5px solid #d4af37;
+      box-shadow: 0 0 50px rgba(212, 175, 55, 0.5);
+    }
+
+    [data-theme="casino"] .reel {
+      background: linear-gradient(to bottom, #333, #222);
+      border: 2px solid #d4af37;
+    }
+
+    [data-theme="casino"] .lever-base {
+      background: linear-gradient(to right, #d4af37, #aa771c, #d4af37);
+    }
+
+    [data-theme="casino"] .lever-ball {
+      background: radial-gradient(circle at 30% 30%, #ff0000, #990000);
+    }
+
+    /* Cyberpunk */
+    [data-theme="cyberpunk"] #slotMachine {
+      background: rgba(0, 0, 0, 0.8);
+      border: 2px solid #00f3ff;
+      box-shadow: 0 0 30px #00f3ff, inset 0 0 30px #00f3ff;
+      border-radius: 0;
+    }
+
+    [data-theme="cyberpunk"] .reel {
+      background: #000;
+      border: 1px solid #ff00ff;
+      color: #00f3ff;
+      border-radius: 0;
+      box-shadow: inset 0 0 15px #ff00ff;
+    }
+
+    [data-theme="cyberpunk"] .lever-base {
+      background: #000;
+      border: 1px solid #00f3ff;
+      box-shadow: 0 0 10px #00f3ff;
+    }
+
+    [data-theme="cyberpunk"] .lever-stick {
+      background: #ff00ff;
+      box-shadow: 0 0 5px #ff00ff;
+    }
+
+    [data-theme="cyberpunk"] .lever-ball {
+      background: #00f3ff;
+      box-shadow: 0 0 15px #00f3ff;
+    }
+
     /* Theme Switcher */
     #themeSwitcher {
       position: fixed;
@@ -791,6 +965,7 @@
       overflow-y: auto;
       width: 320px;
       text-align: left;
+      z-index: 1002;
       /* Hide scrollbar */
       -ms-overflow-style: none !important;
       /* IE and Edge */
@@ -956,12 +1131,29 @@
     <button id="menuToggle" class="ant-btn ant-btn-primary">☰</button>
     <div id="menuItems">
       <button id="menuWheel" class="ant-btn">Lucky Wheel</button>
-      <button id="menuDraw" class="ant-btn">Lucky Draw</button>
+      <button id="menuCard" class="ant-btn">Lucky Draw</button>
+      <button id="menuSlot" class="ant-btn">Lucky Slot</button>
     </div>
   </div>
   <button id="muteButton" class="ant-btn">🔊</button>
   <h1 id="title">Lucky Wheel</h1>
-  <div id="cardContainer" style="display:none;"></div>
+  <div id="cardContainer" style="display: none;"></div>
+
+  <!-- Slot Machine Container -->
+  <div id="slotContainer" style="display: none;">
+    <div id="slotMachine">
+      <div class="reel" id="reel1"></div>
+      <div class="reel" id="reel2"></div>
+      <div class="reel" id="reel3"></div>
+    </div>
+    <div id="slotLever">
+      <div class="lever-base"></div>
+      <div class="lever-stick">
+        <div class="lever-ball"></div>
+      </div>
+    </div>
+  </div>
+
   <div id="wheelContainer">
     <canvas id="wheel" width="500" height="500"></canvas>
     <div id="arrow"></div>
