@@ -24,6 +24,22 @@ const groupNameOk = document.getElementById('groupNameOk');
 const saveConfirmModal = document.getElementById('saveConfirmModal');
 const saveConfirmOk = document.getElementById('saveConfirmOk');
 const arrowEl = document.getElementById("arrow");
+const themeSelect = document.getElementById('themeSelect');
+
+let currentTheme = localStorage.getItem('wheelTheme') || 'glass';
+document.body.dataset.theme = currentTheme;
+if (themeSelect) {
+  themeSelect.value = currentTheme;
+  themeSelect.addEventListener('change', (e) => {
+    currentTheme = e.target.value;
+    document.body.dataset.theme = currentTheme;
+    localStorage.setItem('wheelTheme', currentTheme);
+    drawRouletteWheel();
+    updateOptionList();
+    updateGroupList();
+    if (cardContainer.style.display !== 'none') initCards();
+  });
+}
 
 function resizeCanvas() {
   canvas.width = wheelContainer.clientWidth;
@@ -55,6 +71,13 @@ function shuffleOptions() {
     const j = getRandomInt(0, i + 1);
     [options[i], options[j]] = [options[j], options[i]];
   }
+}
+
+function sortOptions() {
+  options.sort((a, b) => {
+    if (a.active === b.active) return 0;
+    return a.active ? -1 : 1;
+  });
 }
 
 function playFlipSound() {
@@ -184,6 +207,7 @@ function updateOptionList() {
     toggle.checked = opt.active;
     toggle.addEventListener('change', () => {
       opt.active = toggle.checked;
+      sortOptions();
       arc = countActive() > 0 ? Math.PI * 2 / countActive() : Math.PI * 2;
       saveOptions();
       updateOptionList();
@@ -239,17 +263,29 @@ function updateGroupList() {
 
   groups.forEach((g, idx) => {
     const li = document.createElement('li');
-    li.textContent = g.name;
+
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'group-name';
+    nameSpan.textContent = g.name;
+    li.appendChild(nameSpan);
+
+    const btnGroup = document.createElement('div');
+    btnGroup.className = 'group-actions';
+
     const loadBtn = document.createElement('button');
     loadBtn.className = 'ant-btn ant-btn-primary ant-btn-sm';
     loadBtn.textContent = 'Load';
     loadBtn.addEventListener('click', () => loadGroup(idx));
+
     const delBtn = document.createElement('button');
     delBtn.className = 'ant-btn ant-btn-link ant-btn-sm';
     delBtn.textContent = 'x';
     delBtn.addEventListener('click', () => deleteGroup(idx));
-    li.appendChild(loadBtn);
-    li.appendChild(delBtn);
+
+    btnGroup.appendChild(loadBtn);
+    btnGroup.appendChild(delBtn);
+    li.appendChild(btnGroup);
+
     groupListEl.appendChild(li);
   });
 }
@@ -298,47 +334,90 @@ function drawRouletteWheel() {
   const outsideRadius = size * 0.45;
   const iconRadius = size * 0.35;
   const textRadius = size * 0.28;
-  const insideRadius = size * 0.08; // Slightly larger gold hub
+  const insideRadius = size * 0.1;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Rich shadow
-  ctx.shadowColor = 'rgba(0,0,0,0.8)';
-  ctx.shadowBlur = 25;
-  ctx.shadowOffsetX = 0;
-  ctx.shadowOffsetY = 10;
+  // Theme-specific settings
+  let strokeColor, strokeWidth, shadowColor, shadowBlur, fontMain, fontIcon, textColor;
+
+  if (currentTheme === 'cyberpunk') {
+    strokeColor = '#00f3ff';
+    strokeWidth = 2;
+    shadowColor = '#00f3ff';
+    shadowBlur = 15;
+    fontMain = 'bold 16px "Orbitron", sans-serif';
+    fontIcon = '32px "Orbitron", sans-serif';
+    textColor = '#e0e0e0';
+    ctx.shadowColor = shadowColor;
+    ctx.shadowBlur = shadowBlur;
+  } else if (currentTheme === 'casino') {
+    strokeColor = '#d4af37';
+    strokeWidth = 2;
+    shadowColor = 'rgba(0,0,0,0.5)';
+    shadowBlur = 10;
+    fontMain = 'bold 16px "Playfair Display", serif';
+    fontIcon = '32px "Playfair Display", serif';
+    textColor = '#fff';
+    ctx.shadowColor = shadowColor;
+    ctx.shadowBlur = shadowBlur;
+  } else { // Glass
+    strokeColor = 'rgba(255, 255, 255, 0.8)';
+    strokeWidth = 4;
+    shadowColor = 'rgba(0,0,0,0.1)';
+    shadowBlur = 5;
+    fontMain = 'bold 16px "Inter", sans-serif';
+    fontIcon = '32px "Inter", sans-serif';
+    textColor = '#2d3748';
+    ctx.shadowColor = shadowColor;
+    ctx.shadowBlur = shadowBlur;
+  }
 
   for (let i = 0; i < active.length; i++) {
     const angle = startAngle + i * arc;
     const color = getColor(i, active.length);
 
-    // Gradient for depth
-    const grad = ctx.createRadialGradient(center, center, insideRadius, center, center, outsideRadius);
-    grad.addColorStop(0, color);
-    grad.addColorStop(1, shadeColor(color, -40)); // Darken at edges
-    ctx.fillStyle = grad;
+    ctx.fillStyle = color;
 
     ctx.beginPath();
     ctx.arc(center, center, outsideRadius, angle, angle + arc, false);
     ctx.arc(center, center, insideRadius, angle + arc, angle, true);
     ctx.fill();
 
-    // Gold borders
-    ctx.strokeStyle = '#d4af37';
-    ctx.lineWidth = 2;
+    // Gradient overlay for Casino
+    if (currentTheme === 'casino') {
+      const grd = ctx.createRadialGradient(center, center, insideRadius, center, center, outsideRadius);
+      grd.addColorStop(0, 'rgba(0,0,0,0)');
+      grd.addColorStop(1, 'rgba(0,0,0,0.4)');
+      ctx.fillStyle = grd;
+      ctx.fill();
+    }
+
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = strokeWidth;
     ctx.stroke();
 
     ctx.save();
 
-    // Text & Icon - Gold/White
-    ctx.shadowColor = 'rgba(0,0,0,0.8)';
-    ctx.shadowBlur = 4;
-    ctx.fillStyle = '#fff';
+    // Text & Icon
+    if (currentTheme === 'cyberpunk') {
+      ctx.shadowColor = '#ff00ff';
+      ctx.shadowBlur = 5;
+      ctx.fillStyle = '#fff';
+    } else if (currentTheme === 'casino') {
+      ctx.shadowColor = 'rgba(0,0,0,0.8)';
+      ctx.shadowBlur = 4;
+      ctx.fillStyle = textColor;
+    } else {
+      ctx.shadowColor = 'transparent';
+      ctx.fillStyle = textColor;
+    }
+
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
     // Icon
-    ctx.font = '32px "Playfair Display", serif';
+    ctx.font = fontIcon;
     ctx.translate(center + Math.cos(angle + arc / 2) * iconRadius,
       center + Math.sin(angle + arc / 2) * iconRadius);
     ctx.rotate(angle + arc / 2 + Math.PI / 2);
@@ -347,8 +426,12 @@ function drawRouletteWheel() {
 
     ctx.save();
     // Text
-    ctx.fillStyle = '#f0f0f0';
-    ctx.font = 'bold 18px "Playfair Display", serif';
+    if (currentTheme === 'cyberpunk') {
+      ctx.fillStyle = '#e0e0e0';
+    } else {
+      ctx.fillStyle = textColor;
+    }
+    ctx.font = fontMain;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.translate(center + Math.cos(angle + arc / 2) * textRadius,
@@ -358,37 +441,80 @@ function drawRouletteWheel() {
     ctx.restore();
   }
 
-  // Outer Gold Ring
+  // Outer Ring
   ctx.save();
   ctx.beginPath();
   ctx.arc(center, center, outsideRadius, 0, Math.PI * 2);
-  ctx.strokeStyle = '#d4af37';
-  ctx.lineWidth = 10;
+  ctx.strokeStyle = strokeColor;
+
+  if (currentTheme === 'cyberpunk') {
+    ctx.lineWidth = 5;
+    ctx.shadowColor = '#00f3ff';
+    ctx.shadowBlur = 20;
+  } else if (currentTheme === 'casino') {
+    ctx.lineWidth = 10;
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur = 15;
+  } else {
+    ctx.lineWidth = 10;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+  }
   ctx.stroke();
-  // Inner Gold Hub
+
+  // Inner Hub
   ctx.beginPath();
   ctx.arc(center, center, insideRadius, 0, Math.PI * 2);
-  ctx.fillStyle = 'radial-gradient(circle, #fcf6ba, #bf953f)';
-  ctx.fill();
-  ctx.stroke();
+
+  if (currentTheme === 'cyberpunk') {
+    ctx.fillStyle = '#000';
+    ctx.fill();
+    ctx.strokeStyle = '#ff00ff';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+  } else if (currentTheme === 'casino') {
+    const hubGrad = ctx.createRadialGradient(center, center, 0, center, center, insideRadius);
+    hubGrad.addColorStop(0, '#bf953f');
+    hubGrad.addColorStop(1, '#aa771c');
+    ctx.fillStyle = hubGrad;
+    ctx.fill();
+    ctx.strokeStyle = '#d4af37';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  } else {
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Glass Hub Icon
+    ctx.fillStyle = '#4a5568';
+    ctx.font = '24px "Inter"';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('★', center, center);
+  }
   ctx.restore();
 }
 
 function shadeColor(color, percent) {
-  // Helper to darken/lighten hex or hsl? 
-  // Since getColor returns HSL, let's just return the color for now or handle HSL parsing.
-  // Actually, let's just use a simple radial gradient in draw loop that assumes the base color is valid.
-  // But wait, getColor returns HSL string. Canvas gradient stops handle that fine.
-  // To darken HSL string "hsl(h, s%, l%)", we can regex replace l%.
-  return color.replace(/(\d+)%\)/, (match, p1) => Math.max(0, parseInt(p1) + percent) + '%)');
+  return color; // Not needed for flat neon
 }
 
 function getColor(index, total) {
-  // Jewel Tones: Rich, Deep, Saturated
-  // Ruby (340), Emerald (140), Sapphire (230), Amethyst (270), Gold (45)
-  // Let's generate a rich spectrum but keep lightness low (40-50%) and saturation high (80-100%)
-  const hue = index * (360 / total);
-  return `hsl(${hue}, 85%, 45%)`;
+  if (currentTheme === 'cyberpunk') {
+    const colors = [
+      'rgba(0, 243, 255, 0.4)', // Cyan
+      'rgba(255, 0, 255, 0.4)', // Magenta
+      'rgba(252, 238, 10, 0.4)', // Yellow
+      'rgba(118, 75, 162, 0.4)'  // Purple
+    ];
+    return colors[index % colors.length];
+  } else if (currentTheme === 'casino') {
+    return `hsl(${index * 360 / total}, 85%, 45%)`;
+  } else {
+    return `hsl(${index * 360 / total}, 85%, 85%)`;
+  }
 }
 
 function spin(e) {
@@ -718,7 +844,7 @@ groupNameOk.addEventListener('click', function () {
   }
   saveGroups();
   updateGroupList();
-  options = [];
+  // options = []; // Don't clear options after save
   arc = countActive() > 0 ? Math.PI * 2 / countActive() : Math.PI * 2;
   saveOptions();
   updateOptionList();
