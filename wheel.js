@@ -1038,9 +1038,6 @@ saveConfirmModal.addEventListener('click', function (e) {
 muteButton.textContent = muted ? '🔇' : '🔊';
 updateOptionList();
 updateGroupList();
-muteButton.textContent = muted ? '🔇' : '🔊';
-updateOptionList();
-updateGroupList();
 resizeCanvas();
 
 // Restore mode
