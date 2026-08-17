@@ -13,6 +13,8 @@ and spin a wheel to randomly choose one.
 - Results are shown in a pop-up modal
 - Save sets of options into named groups for later loading
 - One-click sharing: copy a link that carries your options to anyone else
+- Destructive actions (reset, delete a group, overwrite a saved name) ask first
+- Keyboard and screen-reader friendly: every mode can be played without a mouse
 - Uses `window.crypto.getRandomValues` for stronger randomness
 
 Open `index.html` in a browser or deploy it via GitHub Pages to use it.

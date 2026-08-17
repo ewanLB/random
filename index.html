@@ -37,6 +37,11 @@
       --modal-border: 1px solid rgba(255, 255, 255, 0.6);
       --card-back-bg: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
       --card-border: 1px solid rgba(255, 255, 255, 0.8);
+      /* Slot geometry lives in variables so the mobile query can shrink the whole
+         machine at once and wheel.js can scroll the strip in calc() units. */
+      --reel-w: 100px;
+      --reel-item-h: 150px;
+      --reel-dot: 80px;
     }
 
     /* Casino Theme Overrides */
@@ -114,7 +119,10 @@
     #title {
       font-family: var(--font-title);
       font-weight: 700;
-      font-size: 3.5em;
+      /* Was a flat 3.5em, which slid underneath the fixed theme picker and mode
+         menu on any window between roughly 600px and 900px wide. */
+      font-size: clamp(1.5rem, 4.5vw, 3.5em);
+      padding: 0 min(26vw, 240px);
       margin: 10px 0 30px;
       transition: all 0.5s ease;
     }
@@ -209,10 +217,18 @@
       justify-content: center;
       align-items: center;
       gap: 10px;
+      flex-wrap: wrap;
+      max-width: 100%;
     }
 
     #addForm input {
+      /* border-box + min-width:0 let the field shrink on a narrow phone instead of
+         pushing the whole page wider than the viewport. */
+      box-sizing: border-box;
+      flex: 0 1 220px;
       width: 220px;
+      min-width: 0;
+      max-width: 100%;
     }
 
     /* Option List Styles */
@@ -230,6 +246,10 @@
     #optionList li {
       display: inline-flex;
       align-items: center;
+      /* Wrap the row instead of letting a long option shove the page sideways. */
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 100%;
       padding: 8px 16px;
       border-radius: var(--panel-radius);
       background: var(--panel-bg);
@@ -445,6 +465,23 @@
       box-shadow: 0 6px 16px rgba(212, 175, 55, 0.35);
     }
 
+    /* Destructive confirmations should look destructive in every theme. */
+    [data-theme="glass"] .ant-btn-danger,
+    [data-theme="casino"] .ant-btn-danger,
+    [data-theme="cyberpunk"] .ant-btn-danger {
+      background: #e53e3e;
+      color: #fff;
+      border-color: #e53e3e;
+    }
+
+    [data-theme="glass"] .ant-btn-danger:hover,
+    [data-theme="casino"] .ant-btn-danger:hover,
+    [data-theme="cyberpunk"] .ant-btn-danger:hover {
+      background: #c53030;
+      color: #fff;
+      box-shadow: 0 8px 20px rgba(229, 62, 62, 0.45);
+    }
+
     /* Press feedback. Needs the theme prefix to outrank the :hover rules above,
        otherwise the hover transform sticks while the button is held down. */
     [data-theme="glass"] .ant-btn:active,
@@ -548,7 +585,12 @@
       border: var(--modal-border);
       border-radius: var(--panel-radius);
       padding: 30px;
-      min-width: 300px;
+      /* Plain 300px/auto used to overflow small phones and let long option names
+         stretch the dialog past the viewport. */
+      box-sizing: border-box;
+      min-width: min(300px, 88vw);
+      max-width: min(460px, 92vw);
+      overflow-wrap: anywhere;
       color: var(--text-color);
       position: relative;
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
@@ -571,6 +613,14 @@
       color: #00f3ff;
       font-family: 'Orbitron', sans-serif;
       font-size: 0.8em;
+    }
+
+    /* The footers relied on inline whitespace, so Cancel and OK sat almost touching. */
+    .ant-modal-footer {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
     }
 
     .ant-modal-title {
@@ -601,17 +651,33 @@
       align-items: center;
       justify-content: center;
       z-index: 3000;
+      /* The whole overlay is the dismiss target, so say so. */
+      cursor: pointer;
     }
 
     #modalOverlay .modal {
       background: #fff;
-      padding: 50px;
+      /* Fixed 50px padding at 3em ran a long winner name off both edges. */
+      padding: clamp(20px, 5vw, 50px);
       border-radius: 30px;
       font-family: var(--font-title);
-      font-size: 3em;
+      font-size: clamp(1.6rem, 7vw, 3em);
       font-weight: 800;
       text-align: center;
+      box-sizing: border-box;
+      max-width: min(90vw, 640px);
+      overflow-wrap: anywhere;
       animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    /* Nothing told people the winner card was dismissable. */
+    #modalOverlay .modal .modal-hint {
+      margin-top: 18px;
+      font-size: 0.28em;
+      font-weight: 500;
+      letter-spacing: 0;
+      text-transform: none;
+      opacity: 0.65;
     }
 
     [data-theme="glass"] #modalOverlay .modal {
@@ -696,6 +762,12 @@
       align-items: center;
       justify-content: center;
       font-size: 1.5em;
+      /* Long labels used to spill outside the card. */
+      box-sizing: border-box;
+      padding: 8px;
+      overflow: hidden;
+      text-align: center;
+      overflow-wrap: anywhere;
       box-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
       /* Cyberpunk default */
       border: 1px solid var(--neon-cyan);
@@ -713,6 +785,17 @@
     [data-theme="cyberpunk"] .card-face.front {
       background: var(--bg, rgba(0, 0, 0, 0.8));
       color: #00f3ff;
+    }
+
+    .card-face .card-text {
+      max-width: 100%;
+      font-size: 0.62em;
+      line-height: 1.25;
+      /* Clamp to three lines rather than pushing the '?' out of the card. */
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
 
     .card-face.front::after {
@@ -765,8 +848,8 @@
     }
 
     .reel {
-      width: 100px;
-      height: 150px;
+      width: var(--reel-w);
+      height: var(--reel-item-h);
       overflow: hidden;
       background: rgba(255, 255, 255, 0.1);
       border-radius: 10px;
@@ -786,7 +869,7 @@
     }
 
     .reel-item {
-      height: 150px;
+      height: var(--reel-item-h);
       width: 100%;
       display: flex;
       align-items: center;
@@ -797,15 +880,15 @@
 
     .reel-item-content {
       /* Added this selector based on the provided snippet */
-      width: 80px;
+      width: var(--reel-dot);
       /* Fixed width for centering */
-      height: 80px;
+      height: var(--reel-dot);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 35px auto;
-      /* Center vertically in 150px height */
+      margin: calc((var(--reel-item-h) - var(--reel-dot)) / 2) auto;
+      /* Center vertically inside one reel window */
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
       color: #fff;
       text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
@@ -1121,12 +1204,73 @@
     #optionList li input[type="text"] {
       margin-left: 6px;
       width: 120px;
+      min-width: 0;
+      max-width: 100%;
+      box-sizing: border-box;
     }
 
-    #optionList li .icon-input {
+    /* Needs input[type="text"] too: the rule above is more specific than a bare
+       .icon-input, so the emoji field was rendering 120px wide. */
+    #optionList li input.icon-input[type="text"] {
       margin-left: 6px;
-      width: 32px;
+      width: 42px;
       text-align: center;
+    }
+
+    /* From 1280px up the saved-group panel is pinned to the top-left corner and the mode
+       menu to the top-right, and the centred content column (800px option list, 660px card
+       grid) only clears them on its own past ~1560px. In between, reserve both corners as
+       gutters so content sits between the panels instead of sliding under them. */
+    @media (min-width: 1280px) and (max-width: 1559px) {
+      body {
+        padding-left: 392px;
+        padding-right: 200px;
+      }
+    }
+
+    /* The fixed 320px group panel only clears the centred 500px content column when the
+       window is at least ~1280px wide; below that it floated over the wheel, and the
+       panels pinned to the top corners also started eating the heading. Switch to a
+       stacked layout: hamburger menu, group panel in the flow, page below the corners. */
+    @media (max-width: 1279px) {
+      body {
+        padding-top: 96px;
+      }
+
+      #title {
+        padding: 0;
+        margin-top: 0;
+      }
+
+      /* Show the mode toggle and collapse the items into it. */
+      #menuToggle {
+        display: block;
+      }
+
+      #menuItems {
+        display: none;
+        position: absolute;
+        right: 0;
+        top: 40px;
+        z-index: 1000;
+      }
+
+      #menu.open #menuItems {
+        display: flex;
+      }
+
+      #groupPanel {
+        /* This used to be display:none, but updateGroupList() sets an inline
+           display:block that always won, so the fixed 320px panel floated over the
+           wheel. Let it flow in the page instead — hiding it outright would also make
+           the per-group share button unreachable on the phones where sharing matters. */
+        position: static;
+        width: auto;
+        /* Line the panel up with the content column instead of stretching it edge to edge. */
+        max-width: 520px;
+        max-height: 40vh;
+        margin: 0 auto 16px;
+      }
     }
 
     @media (max-width: 600px) {
@@ -1135,8 +1279,11 @@
       }
 
       #wheelContainer {
-        width: 90vw;
-        height: 90vw;
+        /* 90vw ignores the 20px body padding, so the wheel used to stick out of
+           the viewport and add a horizontal scrollbar on narrow phones. */
+        width: min(90vw, 100%);
+        height: auto;
+        aspect-ratio: 1 / 1;
       }
 
       #wheel {
@@ -1160,33 +1307,67 @@
         height: 55vw;
       }
 
-      /* Mobile: Show toggle, hide items initially */
-      #menuToggle {
-        display: block;
+      /* The machine was a hard 440px wide (3x100px reels + gaps + lever), wider
+         than any phone. Scale the geometry down instead of clipping it. */
+      :root {
+        --reel-w: 20vw;
+        --reel-item-h: 30vw;
+        --reel-dot: 16vw;
       }
 
-      #menuItems {
-        display: none;
-        position: absolute;
-        right: 0;
-        top: 40px;
-        z-index: 1000;
+      #slotContainer {
+        gap: 8px;
+        margin-top: 20px;
       }
 
-      #menu.open #menuItems {
-        display: flex;
+      #slotMachine {
+        gap: 10px;
+        padding: 12px;
       }
 
-      #groupPanel {
-        /* This used to be display:none, but updateGroupList() sets an inline
-           display:block that always won, so a 320px fixed panel floated over the
-           wheel on phones. Let it flow in the page instead — hiding it outright
-           would also make the per-group share button unreachable on mobile. */
-        position: static;
-        width: auto;
-        max-height: 40vh;
-        /* Top margin clears the fixed mode menu pinned to the top-right corner. */
-        margin: 80px 0 16px;
+      .reel {
+        font-size: 2.2em;
+      }
+
+      #slotLever {
+        width: 28px;
+        height: 150px;
+        margin-left: 2px;
+      }
+
+      .lever-base {
+        width: 28px;
+        height: 70px;
+      }
+
+      .lever-stick {
+        height: 70px;
+        bottom: 56px;
+        left: 9px;
+      }
+
+      .lever-ball {
+        width: 28px;
+        height: 28px;
+        top: -14px;
+      }
+    }
+
+    /* Very narrow phones (and split-screen windows) need the 20px body padding back. */
+    @media (max-width: 380px) {
+      /* Left/right only: the top padding set above still has to clear the fixed panels. */
+      body {
+        padding-left: 10px;
+        padding-right: 10px;
+      }
+
+      #title {
+        font-size: 1.8em;
+      }
+
+      #controlsContainer {
+        gap: 8px;
+        margin-top: 24px;
       }
     }
 
@@ -1262,7 +1443,7 @@
       <div class="reel" id="reel2"></div>
       <div class="reel" id="reel3"></div>
     </div>
-    <div id="slotLever">
+    <div id="slotLever" role="button" tabindex="0" aria-label="Pull the lever to spin">
       <div class="lever-base"></div>
       <div class="lever-stick">
         <div class="lever-ball"></div>
@@ -1271,7 +1452,7 @@
   </div>
 
   <div id="wheelContainer">
-    <canvas id="wheel" width="500" height="500"></canvas>
+    <canvas id="wheel" width="500" height="500" tabindex="0" role="button" aria-label="Spin the wheel"></canvas>
     <div id="arrow"></div>
   </div>
   <div id="controlsContainer">
@@ -1285,10 +1466,29 @@
   </div>
   <ul id="optionList"></ul>
   <div id="iconList"></div>
-  <div id="modalOverlay">
+  <div id="modalOverlay" role="dialog" aria-modal="true" aria-label="Result" tabindex="-1">
     <div class="modal" id="modalContent"></div>
   </div>
-  <div id="groupNameModal" class="ant-modal-root" style="display:none;">
+  <div id="confirmModal" class="ant-modal-root" style="display:none;" role="dialog" aria-modal="true"
+    aria-labelledby="confirmTitle">
+    <div class="ant-modal-mask"></div>
+    <div class="ant-modal-wrap">
+      <div class="ant-modal" style="top:25vh;">
+        <div class="ant-modal-content">
+          <div class="ant-modal-header">
+            <div class="ant-modal-title" id="confirmTitle">Are you sure?</div>
+          </div>
+          <div class="ant-modal-body" id="confirmMessage"></div>
+          <div class="ant-modal-footer">
+            <button id="confirmCancel" class="ant-btn">Cancel</button>
+            <button id="confirmOk" class="ant-btn ant-btn-primary">OK</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="groupNameModal" class="ant-modal-root" style="display:none;" role="dialog" aria-modal="true"
+    aria-label="Save group">
     <div class="ant-modal-mask"></div>
     <div class="ant-modal-wrap">
       <div class="ant-modal" style="top:20vh;">
@@ -1307,7 +1507,8 @@
       </div>
     </div>
   </div>
-  <div id="saveConfirmModal" class="ant-modal-root" style="display:none;">
+  <div id="saveConfirmModal" class="ant-modal-root" style="display:none;" role="dialog" aria-modal="true"
+    aria-label="Group saved">
     <div class="ant-modal-mask"></div>
     <div class="ant-modal-wrap">
       <div class="ant-modal" style="top:30vh;">
@@ -1320,7 +1521,8 @@
       </div>
     </div>
   </div>
-  <div id="shareModal" class="ant-modal-root" style="display:none;">
+  <div id="shareModal" class="ant-modal-root" style="display:none;" role="dialog" aria-modal="true"
+    aria-label="Share these options">
     <div class="ant-modal-mask"></div>
     <div class="ant-modal-wrap">
       <div class="ant-modal" style="top:20vh;">
@@ -1343,7 +1545,8 @@
       </div>
     </div>
   </div>
-  <div id="shareLoadModal" class="ant-modal-root" style="display:none;">
+  <div id="shareLoadModal" class="ant-modal-root" style="display:none;" role="dialog" aria-modal="true"
+    aria-label="Shared options">
     <div class="ant-modal-mask"></div>
     <div class="ant-modal-wrap">
       <div class="ant-modal" style="top:20vh;">

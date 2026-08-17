@@ -23,6 +23,11 @@ const groupNameCancel = document.getElementById('groupNameCancel');
 const groupNameOk = document.getElementById('groupNameOk');
 const saveConfirmModal = document.getElementById('saveConfirmModal');
 const saveConfirmOk = document.getElementById('saveConfirmOk');
+const confirmModal = document.getElementById('confirmModal');
+const confirmTitle = document.getElementById('confirmTitle');
+const confirmMessage = document.getElementById('confirmMessage');
+const confirmCancel = document.getElementById('confirmCancel');
+const confirmOk = document.getElementById('confirmOk');
 const shareButton = document.getElementById('shareButton');
 const shareModal = document.getElementById('shareModal');
 const shareLinkInput = document.getElementById('shareLinkInput');
@@ -41,7 +46,6 @@ const menuCard = document.getElementById('menuCard');
 const menuSlot = document.getElementById('menuSlot');
 const controlsContainer = document.getElementById('controlsContainer');
 const slotContainer = document.getElementById('slotContainer');
-const spinSlotBtn = document.getElementById('spinSlotBtn');
 const groupPanel = document.getElementById('groupPanel');
 
 
@@ -63,6 +67,9 @@ if (themeSelect) {
 }
 
 function resizeCanvas() {
+  // In card or slot mode the container is display:none, so clientWidth is 0. Writing that
+  // to the canvas wiped the wheel, and nothing redrew it when the mode came back.
+  if (!wheelContainer.clientWidth || !wheelContainer.clientHeight) return;
   canvas.width = wheelContainer.clientWidth;
   canvas.height = wheelContainer.clientHeight;
   drawRouletteWheel();
@@ -165,22 +172,93 @@ let lastTickIndex = -1;
 
 let groups = JSON.parse(localStorage.getItem('wheelGroups') || '[]');
 
+/* ---------- Dialog plumbing ---------- */
+
+// Dialogs used to be mouse-only: opening one left focus on the page behind it, Tab
+// walked straight out into the background controls, and closing dropped focus on the
+// floor. Everything now opens and closes through these two helpers.
+const openDialogs = [];
+
+const FOCUSABLE = 'button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])';
+
+function dialogFocusables(dialog) {
+  return Array.from(dialog.querySelectorAll(FOCUSABLE)).filter(el => el.offsetParent !== null);
+}
+
+function openDialog(dialog, focusTarget) {
+  const opener = document.activeElement;
+  dialog.__opener = opener && opener !== document.body ? opener : null;
+  dialog.style.display = 'flex';
+  if (!openDialogs.includes(dialog)) openDialogs.push(dialog);
+  const target = focusTarget || dialogFocusables(dialog)[0] || dialog;
+  target.focus();
+}
+
+function closeDialog(dialog) {
+  dialog.style.display = 'none';
+  const idx = openDialogs.indexOf(dialog);
+  if (idx >= 0) openDialogs.splice(idx, 1);
+  const opener = dialog.__opener;
+  dialog.__opener = null;
+  if (opener && document.contains(opener)) opener.focus();
+}
+
+// Keep Tab inside the topmost dialog.
+document.addEventListener('keydown', function (e) {
+  if (e.key !== 'Tab' || !openDialogs.length) return;
+  const dialog = openDialogs[openDialogs.length - 1];
+  const items = dialogFocusables(dialog);
+  if (!items.length) {
+    e.preventDefault();
+    dialog.focus();
+    return;
+  }
+  const first = items[0];
+  const last = items[items.length - 1];
+  const inside = dialog.contains(document.activeElement);
+  if (e.shiftKey && (!inside || document.activeElement === first)) {
+    e.preventDefault();
+    last.focus();
+  } else if (!e.shiftKey && (!inside || document.activeElement === last)) {
+    e.preventDefault();
+    first.focus();
+  }
+});
+
+let confirmHandler = null;
+
+// Reset and "delete group" used to fire on a single click with no way back.
+function openConfirm(opts) {
+  confirmTitle.textContent = opts.title;
+  confirmMessage.textContent = opts.message;
+  confirmOk.textContent = opts.confirmLabel || 'OK';
+  confirmOk.classList.toggle('ant-btn-danger', !!opts.danger);
+  confirmOk.classList.toggle('ant-btn-primary', !opts.danger);
+  confirmHandler = opts.onConfirm || null;
+  // Cancel takes focus first so a stray Enter cannot destroy anything.
+  openDialog(confirmModal, confirmCancel);
+}
+
+function closeConfirm() {
+  confirmHandler = null;
+  closeDialog(confirmModal);
+}
+
 function openGroupNameModal() {
   groupNameInput.value = '';
-  groupNameModal.style.display = 'flex';
-  groupNameInput.focus();
+  openDialog(groupNameModal, groupNameInput);
 }
 
 function closeGroupNameModal() {
-  groupNameModal.style.display = 'none';
+  closeDialog(groupNameModal);
 }
 
 function openSaveConfirm() {
-  saveConfirmModal.style.display = 'flex';
+  openDialog(saveConfirmModal, saveConfirmOk);
 }
 
 function closeSaveConfirm() {
-  saveConfirmModal.style.display = 'none';
+  closeDialog(saveConfirmModal);
 }
 
 function countActive() {
@@ -358,14 +436,40 @@ function loadGroup(idx) {
 }
 
 function deleteGroup(idx) {
-  groups.splice(idx, 1);
-  saveGroups();
-  updateGroupList();
+  const grp = groups[idx];
+  if (!grp) return;
+  openConfirm({
+    title: 'Delete group?',
+    message: `"${grp.name}" will be removed from your saved groups. This cannot be undone.`,
+    confirmLabel: 'Delete',
+    danger: true,
+    onConfirm: () => {
+      // Look the group up again: the list may have been rebuilt while the dialog was open.
+      const target = groups.indexOf(grp);
+      if (target < 0) return;
+      groups.splice(target, 1);
+      saveGroups();
+      updateGroupList();
+    }
+  });
+}
+
+function findGroupIndex(name) {
+  const normalized = name.trim().toLowerCase();
+  return groups.findIndex(g => g.name.trim().toLowerCase() === normalized);
+}
+
+// Used when loading a shared link: never silently replace a saved group that just
+// happens to share its name.
+function uniqueGroupName(name) {
+  if (findGroupIndex(name) < 0) return name;
+  let n = 2;
+  while (findGroupIndex(`${name} (${n})`) >= 0) n++;
+  return `${name} (${n})`;
 }
 
 function upsertGroup(name, opts) {
-  const normalized = name.trim().toLowerCase();
-  const existingIdx = groups.findIndex(g => g.name.trim().toLowerCase() === normalized);
+  const existingIdx = findGroupIndex(name);
   const groupData = { name, options: JSON.parse(JSON.stringify(opts)) };
   if (existingIdx >= 0) {
     groups[existingIdx] = groupData;
@@ -509,7 +613,7 @@ async function openShareModal(name, opts) {
     shareHint.textContent = '';
     shareNativeBtn.style.display = 'none';
     shareCopyBtn.disabled = true;
-    shareModal.style.display = 'flex';
+    openDialog(shareModal, shareClose);
     return;
   }
   const url = buildShareUrl(name, opts);
@@ -523,12 +627,13 @@ async function openShareModal(name, opts) {
   // Clear first: without this the previous "copied" message stays on screen
   // while the clipboard write is still pending.
   shareStatus.textContent = 'Copying link…';
-  shareModal.style.display = 'flex';
+  // The link field selects itself on focus, so a keyboard user can Ctrl+C straight away.
+  openDialog(shareModal, shareLinkInput);
   showCopyResult(await copyToClipboard(url));
 }
 
 function closeShareModal() {
-  shareModal.style.display = 'none';
+  closeDialog(shareModal);
 }
 
 let pendingShare = null;
@@ -550,7 +655,7 @@ function clearShareCode() {
 }
 
 function closeShareLoadModal() {
-  shareLoadModal.style.display = 'none';
+  closeDialog(shareLoadModal);
   pendingShare = null;
 }
 
@@ -576,15 +681,17 @@ function handleSharedLink() {
   previewEl.textContent = data.options.map(o => `${o.icon} ${o.text}`).join('、');
   shareLoadInfo.appendChild(previewEl);
 
-  shareLoadModal.style.display = 'flex';
+  openDialog(shareLoadModal, shareLoadCancel);
 }
 
 // Option text can arrive from a shared link, so always render it as text, never as HTML.
 function renderCardFace(el, opt) {
   el.textContent = '';
   const iconEl = document.createElement('div');
+  iconEl.className = 'card-icon';
   iconEl.textContent = opt.icon || '';
   const textEl = document.createElement('div');
+  textEl.className = 'card-text';
   textEl.textContent = opt.text;
   el.appendChild(iconEl);
   el.appendChild(textEl);
@@ -597,8 +704,13 @@ function showModal(option, index) {
   iconEl.textContent = option.icon || '';
   modalContent.appendChild(iconEl);
   modalContent.appendChild(document.createTextNode(option.text));
+  // Nothing said the result card was dismissable, so people sat waiting for it to go.
+  const hintEl = document.createElement('div');
+  hintEl.className = 'modal-hint';
+  hintEl.textContent = 'Tap anywhere to close';
+  modalContent.appendChild(hintEl);
   modalContent.style.background = getColor(index, countActive());
-  modalOverlay.style.display = 'flex';
+  openDialog(modalOverlay, modalOverlay);
   startFireworks();
   if (!muted) {
     popupSound.currentTime = 0;
@@ -606,13 +718,38 @@ function showModal(option, index) {
   }
 }
 
-modalOverlay.addEventListener('click', () => {
-  modalOverlay.style.display = 'none';
+function closeWinnerModal() {
+  closeDialog(modalOverlay);
   if (currentMode === 'card') {
     initCards();
   }
   // Slot mode does not reset on close, keeps the winner visible
-});
+}
+
+modalOverlay.addEventListener('click', closeWinnerModal);
+
+// Canvas has no text wrapping, so a long option used to run straight across its
+// neighbours and off the wheel. Shrink the font first, then clip with an ellipsis.
+function fitWheelText(text, maxWidth, baseFont) {
+  const sizeMatch = baseFont.match(/(\d+(?:\.\d+)?)px/);
+  const baseSize = sizeMatch ? parseFloat(sizeMatch[1]) : 16;
+  // Below ~11px the label is unreadable anyway, so clip instead of shrinking further.
+  const minSize = 11;
+  let size = baseSize;
+  let font = baseFont;
+  ctx.font = font;
+  while (size > minSize && ctx.measureText(text).width > maxWidth) {
+    size -= 1;
+    font = baseFont.replace(/\d+(?:\.\d+)?px/, `${size}px`);
+    ctx.font = font;
+  }
+  if (ctx.measureText(text).width <= maxWidth) return { text, font };
+  let clipped = text;
+  while (clipped.length > 1 && ctx.measureText(`${clipped}…`).width > maxWidth) {
+    clipped = clipped.slice(0, -1);
+  }
+  return { text: `${clipped}…`, font };
+}
 
 function drawRouletteWheel() {
   const active = options.filter(o => o.active);
@@ -622,6 +759,11 @@ function drawRouletteWheel() {
   const iconRadius = size * 0.35;
   const textRadius = size * 0.28;
   const insideRadius = size * 0.1;
+  // Labels run tangentially at textRadius, so their room is the wedge chord there,
+  // capped by how much of the wheel is left at that distance from the centre.
+  const wedgeSpan = 2 * textRadius * Math.sin(Math.min(arc, Math.PI) / 2);
+  const wheelSpan = 2 * Math.sqrt(Math.max(outsideRadius ** 2 - textRadius ** 2, 0));
+  const textMaxWidth = Math.max(Math.min(wedgeSpan, wheelSpan) * 0.85, 24);
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -719,13 +861,14 @@ function drawRouletteWheel() {
     } else {
       ctx.fillStyle = textColor;
     }
-    ctx.font = fontMain;
+    const label = fitWheelText(active[i].text, textMaxWidth, fontMain);
+    ctx.font = label.font;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.translate(center + Math.cos(angle + arc / 2) * textRadius,
       center + Math.sin(angle + arc / 2) * textRadius);
     ctx.rotate(angle + arc / 2 + Math.PI / 2);
-    ctx.fillText(active[i].text, 0, 0);
+    ctx.fillText(label.text, 0, 0);
     ctx.restore();
   }
 
@@ -805,8 +948,12 @@ function getColor(index, total) {
   }
 }
 
+let wheelSpinning = false;
+
 function spin(e) {
   if (countActive() === 0) return;
+  // A second click used to start a second animation loop, so two winners popped up.
+  if (wheelSpinning) return;
   if (e) {
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -819,6 +966,7 @@ function spin(e) {
     if (dx * dx + dy * dy > outsideRadius * outsideRadius) return;
   }
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  wheelSpinning = true;
   startSpinSound();
   spinAngleStart = getRandomFloat(10, 20);
   spinTime = 0;
@@ -841,6 +989,7 @@ function rotateWheel() {
 
 function stopRotateWheel() {
   clearTimeout(spinTimeout);
+  wheelSpinning = false;
   const active = options.filter(o => o.active);
   if (active.length === 0) return;
   // Arrow is now at top (Math.PI * 1.5 or 270 deg)
@@ -991,6 +1140,15 @@ function initCards() {
     card.appendChild(inner);
     cardContainer.appendChild(card);
     card.addEventListener('click', handleCardClick);
+    // Cards are plain divs, so give them a keyboard path too.
+    card.tabIndex = 0;
+    card.setAttribute('role', 'button');
+    card.setAttribute('aria-label', 'Draw a card');
+    card.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      handleCardClick(e);
+    });
   });
   drawPhase = 'front';
 }
@@ -1049,25 +1207,51 @@ function handleCardClick(e) {
 }
 
 canvas.addEventListener('click', spin);
+// The wheel was mouse-only; it is focusable now, so let Enter/Space spin it.
+canvas.addEventListener('keydown', function (e) {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  e.preventDefault();
+  spin();
+});
 
 // Slot Machine Logic
+//
+// All three reels have to agree on the single winner, but they used to share one
+// identical transform, so they read as one block sliding behind three windows.
+// Each reel now starts on its own symbol and travels its own distance for its own
+// duration — independent-looking reels that still stop on the same result.
+const REEL_IDS = ['reel1', 'reel2', 'reel3'];
+const REEL_TARGET_REPEAT = [4, 6, 8];
+const REEL_DURATION = [2.2, 2.9, 3.6];
+const REEL_SETTLE_MS = 180;
+// Two spare repeats so the overshoot never runs past the end of the strip.
+const REEL_STRIP_REPEATS = Math.max(...REEL_TARGET_REPEAT) + 2;
+
+// Scroll in calc() units: --reel-item-h is 150px on desktop but a vw value on
+// phones, and the strip must not care which.
+function reelTransform(itemIndex) {
+  return `translateY(calc(var(--reel-item-h) * ${-itemIndex}))`;
+}
+
+let slotSpinning = false;
+let slotSpinId = 0;
+
 function initSlot() {
   const active = options.filter(o => o.active);
   if (active.length === 0) return;
 
-  ['reel1', 'reel2', 'reel3'].forEach(id => {
+  // Rebuilding the reels invalidates any spin in flight.
+  slotSpinId++;
+  slotSpinning = false;
+
+  REEL_IDS.forEach((id, reelIdx) => {
     const reel = document.getElementById(id);
     reel.innerHTML = '';
     const strip = document.createElement('div');
     strip.className = 'reel-strip';
 
-    // Create a long strip of duplicated options for scrolling effect
-    // We need enough items to scroll comfortably. 
-    // Let's repeat the active list multiple times.
-    const repeatCount = Math.ceil(30 / active.length) + 2; // Ensure at least ~30 items
-
-    for (let i = 0; i < repeatCount; i++) {
-      active.forEach((opt, index) => {
+    for (let i = 0; i < REEL_STRIP_REPEATS; i++) {
+      active.forEach(opt => {
         const item = document.createElement('div');
         item.className = 'reel-item';
 
@@ -1083,9 +1267,9 @@ function initSlot() {
       });
     }
     reel.appendChild(strip);
-    // Reset transform
-    strip.style.transform = 'translateY(0)';
+    // Park each reel on a different symbol at rest.
     strip.style.transition = 'none';
+    strip.style.transform = reelTransform(reelIdx % active.length);
   });
 }
 
@@ -1107,63 +1291,60 @@ function playWinSound() {
 
 function spinSlot() {
   const active = options.filter(o => o.active);
-  if (active.length === 0) return;
+  // Re-pulling the lever mid-spin used to queue a second winner popup.
+  if (active.length === 0 || slotSpinning) return;
 
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  slotSpinning = true;
+  const spinId = ++slotSpinId;
   startSpinSound();
 
-  // Pick a winner
+  // One winner, three reels that all have to show it.
   const winnerIndex = getRandomInt(0, active.length);
   const winner = active[winnerIndex];
 
-  // Calculate scroll distance
-  // We want to land on the winner.
-  // The strip has many repeats. Let's land on a specific repeat index deep in the strip.
-  // Item height is 150px.
-  const itemHeight = 150;
-
-  // Target index in the strip (e.g., somewhere in the middle-end)
-  // We need to find the Nth occurrence of the winner in the strip.
-  // Let's aim for the 5th repeat or so.
-  const targetRepeat = 5;
-  const targetIndex = (targetRepeat * active.length) + winnerIndex;
-
-  // Calculate Y offset. 
-  // We want the target item to be centered.
-  // The reel height is 150px. The item height is 150px.
-  // So translate to -targetIndex * 150.
-  const translateY = -(targetIndex * itemHeight);
-
-  ['reel1', 'reel2', 'reel3'].forEach((id, idx) => {
+  REEL_IDS.forEach((id, reelIdx) => {
     const reel = document.getElementById(id);
     const strip = reel.querySelector('.reel-strip');
+    if (!strip) return;
 
-    // Reset first to 0 (seamless if we constructed it right, but for now just jump)
+    // A different starting symbol per reel means a different travel distance, so the
+    // reels are visibly out of step on the way down.
+    const start = active.length > 1 ? getRandomInt(0, active.length) : 0;
     strip.style.transition = 'none';
-    strip.style.transform = 'translateY(0)';
+    strip.style.transform = reelTransform(start);
+    void strip.offsetWidth; // force reflow so the jump back is not animated
 
-    // Force reflow
-    void strip.offsetWidth;
+    const target = (REEL_TARGET_REPEAT[reelIdx] * active.length) + winnerIndex;
+    const duration = REEL_DURATION[reelIdx];
+    // Stop a fraction of a symbol past the winner, then snap back: that little
+    // bounce is what makes a mechanical reel feel like it has weight.
+    strip.style.transition = `transform ${duration}s cubic-bezier(0.12, 0.72, 0.16, 1)`;
+    strip.style.transform = reelTransform(target + 0.12);
 
-    // Animate
-    // Add delay for each reel
-    const duration = 2 + (idx * 0.5); // 2s, 2.5s, 3s
-    strip.style.transition = `transform ${duration}s cubic-bezier(0.25, 0.1, 0.25, 1)`;
-    strip.style.transform = `translateY(${translateY}px)`;
+    setTimeout(() => {
+      if (spinId !== slotSpinId) return;
+      strip.style.transition = `transform ${REEL_SETTLE_MS}ms ease-out`;
+      strip.style.transform = reelTransform(target);
+      playTick(); // each reel gets its own audible stop
+    }, duration * 1000);
   });
 
-  // Show modal after last reel finishes
+  // Announce the winner once the slowest reel has settled.
+  const total = (Math.max(...REEL_DURATION) * 1000) + REEL_SETTLE_MS + 120;
   setTimeout(() => {
+    if (spinId !== slotSpinId) return; // options changed mid-spin
+    slotSpinning = false;
     stopSpinSound();
     playWinSound();
     showModal(winner, winnerIndex);
-  }, 3000); // Max duration
+  }, total);
 }
 
 const slotLever = document.getElementById('slotLever');
 if (slotLever) {
-  slotLever.addEventListener('click', () => {
-    if (slotLever.classList.contains('pulled')) return; // Prevent double click
+  const pullLever = () => {
+    if (slotSpinning || slotLever.classList.contains('pulled')) return;
 
     slotLever.classList.add('pulled');
 
@@ -1176,6 +1357,13 @@ if (slotLever) {
         slotLever.classList.remove('pulled');
       }, 500);
     }, 300);
+  };
+  slotLever.addEventListener('click', pullLever);
+  // The lever is a div, so it needed its own keyboard handling.
+  slotLever.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    e.preventDefault();
+    pullLever();
   });
 }
 
@@ -1191,6 +1379,9 @@ menuWheel.addEventListener('click', () => {
   addForm.style.display = '';
   resetButton.style.display = '';
   optionList.style.display = '';
+  // The container has only just become measurable, and the window may have been resized
+  // while another mode was showing.
+  resizeCanvas();
   menu.classList.remove('open');
 });
 
@@ -1237,7 +1428,7 @@ addForm.addEventListener('submit', function (e) {
   }
 });
 
-resetButton.addEventListener('click', function () {
+function resetOptions() {
   options = ['Option 1', 'Option 2', 'Option 3'].map(t => ({ text: t, active: true }));
   shuffleOptions();
   assignUniqueIcons(options);
@@ -1248,6 +1439,17 @@ resetButton.addEventListener('click', function () {
   if (cardContainer.style.display !== 'none') {
     initCards();
   }
+}
+
+// One stray click used to wipe the whole list with no undo.
+resetButton.addEventListener('click', function () {
+  openConfirm({
+    title: 'Reset options?',
+    message: `This throws away your current ${options.length} option${options.length === 1 ? '' : 's'} and restores the three defaults. Saved groups are not affected.`,
+    confirmLabel: 'Reset',
+    danger: true,
+    onConfirm: resetOptions
+  });
 });
 
 muteButton.addEventListener('click', function () {
@@ -1275,12 +1477,7 @@ groupNameModal.addEventListener('click', function (e) {
   }
 });
 
-groupNameOk.addEventListener('click', function () {
-  const name = groupNameInput.value.trim();
-  if (!name) {
-    closeGroupNameModal();
-    return;
-  }
+function commitGroupSave(name) {
   upsertGroup(name, options);
   // options = []; // Don't clear options after save
   arc = countActive() > 0 ? Math.PI * 2 / countActive() : Math.PI * 2;
@@ -1290,8 +1487,29 @@ groupNameOk.addEventListener('click', function () {
   if (cardContainer.style.display !== 'none') {
     initCards();
   }
-  closeGroupNameModal();
   openSaveConfirm();
+}
+
+groupNameOk.addEventListener('click', function () {
+  const name = groupNameInput.value.trim();
+  if (!name) {
+    closeGroupNameModal();
+    return;
+  }
+  closeGroupNameModal();
+  // Saving over an existing group used to happen silently.
+  const existing = findGroupIndex(name);
+  if (existing >= 0) {
+    openConfirm({
+      title: 'Overwrite group?',
+      message: `A group called "${groups[existing].name}" already exists. Saving replaces its ${groups[existing].options.length} saved option${groups[existing].options.length === 1 ? '' : 's'}.`,
+      confirmLabel: 'Overwrite',
+      danger: true,
+      onConfirm: () => commitGroupSave(name)
+    });
+    return;
+  }
+  commitGroupSave(name);
 });
 
 shareButton.addEventListener('click', () => openShareModal('', options));
@@ -1329,9 +1547,27 @@ shareLoadOk.addEventListener('click', function () {
   const shared = pendingShare;
   applyOptions(shared.options);
   if (shared.name) {
-    upsertGroup(shared.name, shared.options);
+    // Don't clobber a group of the recipient's that happens to share the name.
+    const existing = findGroupIndex(shared.name);
+    const sameContent = existing >= 0 &&
+      JSON.stringify(groups[existing].options) === JSON.stringify(shared.options);
+    if (!sameContent) {
+      upsertGroup(uniqueGroupName(shared.name), shared.options);
+    }
   }
   closeShareLoadModal();
+});
+
+confirmCancel.addEventListener('click', closeConfirm);
+confirmOk.addEventListener('click', function () {
+  const run = confirmHandler;
+  closeConfirm();
+  if (run) run();
+});
+confirmModal.addEventListener('click', function (e) {
+  if (e.target === confirmModal || e.target.classList.contains('ant-modal-mask')) {
+    closeConfirm();
+  }
 });
 
 saveConfirmOk.addEventListener('click', closeSaveConfirm);
@@ -1360,16 +1596,14 @@ handleSharedLink();
 // Pasting a share link into an already-open tab only changes the hash, so no reload happens.
 window.addEventListener('hashchange', handleSharedLink);
 
-// Every dialog was mouse-only before; Escape now dismisses whichever one is open.
+// Every dialog was mouse-only before; Escape now dismisses whichever one is on top.
 document.addEventListener('keydown', function (e) {
-  if (e.key !== 'Escape') return;
-  const isOpen = el => el && getComputedStyle(el).display !== 'none';
-  if (isOpen(shareModal)) return closeShareModal();
-  if (isOpen(shareLoadModal)) return closeShareLoadModal();
-  if (isOpen(groupNameModal)) return closeGroupNameModal();
-  if (isOpen(saveConfirmModal)) return closeSaveConfirm();
-  if (isOpen(modalOverlay)) {
-    modalOverlay.style.display = 'none';
-    if (currentMode === 'card') initCards();
-  }
+  if (e.key !== 'Escape' || !openDialogs.length) return;
+  const dialog = openDialogs[openDialogs.length - 1];
+  if (dialog === shareModal) return closeShareModal();
+  if (dialog === shareLoadModal) return closeShareLoadModal();
+  if (dialog === groupNameModal) return closeGroupNameModal();
+  if (dialog === saveConfirmModal) return closeSaveConfirm();
+  if (dialog === confirmModal) return closeConfirm();
+  if (dialog === modalOverlay) return closeWinnerModal();
 });
