@@ -23,6 +23,18 @@ const groupNameCancel = document.getElementById('groupNameCancel');
 const groupNameOk = document.getElementById('groupNameOk');
 const saveConfirmModal = document.getElementById('saveConfirmModal');
 const saveConfirmOk = document.getElementById('saveConfirmOk');
+const shareButton = document.getElementById('shareButton');
+const shareModal = document.getElementById('shareModal');
+const shareLinkInput = document.getElementById('shareLinkInput');
+const shareStatus = document.getElementById('shareStatus');
+const shareHint = document.getElementById('shareHint');
+const shareCopyBtn = document.getElementById('shareCopyBtn');
+const shareNativeBtn = document.getElementById('shareNativeBtn');
+const shareClose = document.getElementById('shareClose');
+const shareLoadModal = document.getElementById('shareLoadModal');
+const shareLoadInfo = document.getElementById('shareLoadInfo');
+const shareLoadCancel = document.getElementById('shareLoadCancel');
+const shareLoadOk = document.getElementById('shareLoadOk');
 const arrowEl = document.getElementById("arrow");
 const themeSelect = document.getElementById('themeSelect');
 const menuCard = document.getElementById('menuCard');
@@ -292,12 +304,19 @@ function updateGroupList() {
     loadBtn.textContent = 'Load';
     loadBtn.addEventListener('click', () => loadGroup(idx));
 
+    const shareBtn = document.createElement('button');
+    shareBtn.className = 'ant-btn ant-btn-sm';
+    shareBtn.textContent = '🔗';
+    shareBtn.title = 'Share this group';
+    shareBtn.addEventListener('click', () => openShareModal(g.name, g.options));
+
     const delBtn = document.createElement('button');
     delBtn.className = 'ant-btn ant-btn-link ant-btn-sm';
     delBtn.textContent = 'x';
     delBtn.addEventListener('click', () => deleteGroup(idx));
 
     btnGroup.appendChild(loadBtn);
+    btnGroup.appendChild(shareBtn);
     btnGroup.appendChild(delBtn);
     li.appendChild(btnGroup);
 
@@ -305,10 +324,8 @@ function updateGroupList() {
   });
 }
 
-function loadGroup(idx) {
-  const grp = groups[idx];
-  if (!grp) return;
-  options = JSON.parse(JSON.stringify(grp.options));
+function applyOptions(newOptions) {
+  options = JSON.parse(JSON.stringify(newOptions));
   arc = countActive() > 0 ? Math.PI * 2 / countActive() : Math.PI * 2;
   saveOptions();
   updateOptionList();
@@ -321,14 +338,201 @@ function loadGroup(idx) {
   }
 }
 
+function loadGroup(idx) {
+  const grp = groups[idx];
+  if (!grp) return;
+  applyOptions(grp.options);
+}
+
 function deleteGroup(idx) {
   groups.splice(idx, 1);
   saveGroups();
   updateGroupList();
 }
 
+function upsertGroup(name, opts) {
+  const normalized = name.trim().toLowerCase();
+  const existingIdx = groups.findIndex(g => g.name.trim().toLowerCase() === normalized);
+  const groupData = { name, options: JSON.parse(JSON.stringify(opts)) };
+  if (existingIdx >= 0) {
+    groups[existingIdx] = groupData;
+  } else {
+    groups.push(groupData);
+  }
+  saveGroups();
+  updateGroupList();
+}
+
+/* ---------- Share via link ---------- */
+
+const SHARE_PARAM = 's';
+const SHARE_LINK_WARN_LENGTH = 4000;
+
+function toBase64Url(str) {
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  bytes.forEach(b => { bin += String.fromCharCode(b); });
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function fromBase64Url(code) {
+  const b64 = code.replace(/-/g, '+').replace(/_/g, '/');
+  const bin = atob(b64.padEnd(Math.ceil(b64.length / 4) * 4, '='));
+  const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+function encodeShare(name, opts) {
+  const payload = {
+    v: 1,
+    n: name || '',
+    o: opts.map(o => [o.text, o.icon || '', o.active ? 1 : 0])
+  };
+  return toBase64Url(JSON.stringify(payload));
+}
+
+function fillMissingIcons(opts) {
+  const used = new Set(opts.map(o => o.icon).filter(Boolean));
+  opts.forEach(o => {
+    if (o.icon) return;
+    const pool = ICONS.filter(ic => !used.has(ic));
+    o.icon = pool.length ? pool[getRandomInt(0, pool.length)] : ICONS[getRandomInt(0, ICONS.length)];
+    used.add(o.icon);
+  });
+}
+
+function decodeShare(code) {
+  let data;
+  try {
+    data = JSON.parse(fromBase64Url(code));
+  } catch (err) {
+    return null;
+  }
+  if (!data || !Array.isArray(data.o)) return null;
+  const opts = data.o
+    .filter(item => Array.isArray(item) && typeof item[0] === 'string' && item[0].trim())
+    .map(item => ({
+      text: String(item[0]).slice(0, 100),
+      icon: typeof item[1] === 'string' ? item[1].slice(0, 4) : '',
+      active: item[2] !== 0
+    }));
+  if (!opts.length) return null;
+  fillMissingIcons(opts);
+  return { name: typeof data.n === 'string' ? data.n.slice(0, 60) : '', options: opts };
+}
+
+function buildShareUrl(name, opts) {
+  const base = location.href.split('#')[0].split('?')[0];
+  return `${base}#${SHARE_PARAM}=${encodeShare(name, opts)}`;
+}
+
+async function copyToClipboard(text) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch (err) { /* fall through to legacy copy */ }
+  try {
+    shareLinkInput.focus();
+    shareLinkInput.select();
+    return document.execCommand('copy');
+  } catch (err) {
+    return false;
+  }
+}
+
+async function openShareModal(name, opts) {
+  const active = opts.filter(o => o.active);
+  if (!active.length) {
+    shareStatus.textContent = 'Nothing to share — enable at least one option first.';
+    shareLinkInput.value = '';
+    shareHint.textContent = '';
+    shareNativeBtn.style.display = 'none';
+    shareModal.style.display = 'flex';
+    return;
+  }
+  const url = buildShareUrl(name, opts);
+  shareLinkInput.value = url;
+  shareHint.textContent = url.length > SHARE_LINK_WARN_LENGTH
+    ? 'This link is long — some chat apps may cut it off. Consider sharing fewer options.'
+    : 'Anyone who opens this link gets the same options.';
+  shareNativeBtn.style.display = navigator.share ? '' : 'none';
+  shareModal.style.display = 'flex';
+  const copied = await copyToClipboard(url);
+  shareStatus.textContent = copied ? '✅ Link copied to clipboard!' : 'Copy the link below to share.';
+}
+
+function closeShareModal() {
+  shareModal.style.display = 'none';
+}
+
+let pendingShare = null;
+
+function readShareCode() {
+  const hashParams = new URLSearchParams(location.hash.replace(/^#/, ''));
+  return hashParams.get(SHARE_PARAM) || new URLSearchParams(location.search).get(SHARE_PARAM);
+}
+
+function clearShareCode() {
+  try {
+    const url = new URL(location.href);
+    url.hash = '';
+    url.searchParams.delete(SHARE_PARAM);
+    history.replaceState(null, '', url.toString());
+  } catch (err) {
+    location.hash = '';
+  }
+}
+
+function closeShareLoadModal() {
+  shareLoadModal.style.display = 'none';
+  pendingShare = null;
+}
+
+function handleSharedLink() {
+  const code = readShareCode();
+  if (!code) return;
+  const data = decodeShare(code);
+  clearShareCode();
+  if (!data) return;
+  pendingShare = data;
+
+  shareLoadInfo.textContent = '';
+  const nameEl = document.createElement('strong');
+  nameEl.textContent = data.name || 'Shared options';
+  shareLoadInfo.appendChild(nameEl);
+
+  const countEl = document.createElement('div');
+  countEl.textContent = `${data.options.length} option${data.options.length > 1 ? 's' : ''}`;
+  shareLoadInfo.appendChild(countEl);
+
+  const previewEl = document.createElement('div');
+  previewEl.className = 'share-preview';
+  previewEl.textContent = data.options.map(o => `${o.icon} ${o.text}`).join('、');
+  shareLoadInfo.appendChild(previewEl);
+
+  shareLoadModal.style.display = 'flex';
+}
+
+// Option text can arrive from a shared link, so always render it as text, never as HTML.
+function renderCardFace(el, opt) {
+  el.textContent = '';
+  const iconEl = document.createElement('div');
+  iconEl.textContent = opt.icon || '';
+  const textEl = document.createElement('div');
+  textEl.textContent = opt.text;
+  el.appendChild(iconEl);
+  el.appendChild(textEl);
+}
+
 function showModal(option, index) {
-  modalContent.innerHTML = `<span class="icon">${option.icon}</span>${option.text}`;
+  modalContent.textContent = '';
+  const iconEl = document.createElement('span');
+  iconEl.className = 'icon';
+  iconEl.textContent = option.icon || '';
+  modalContent.appendChild(iconEl);
+  modalContent.appendChild(document.createTextNode(option.text));
   modalContent.style.background = getColor(index, countActive());
   modalOverlay.style.display = 'flex';
   startFireworks();
@@ -712,7 +916,7 @@ function initCards() {
     inner.className = 'card-inner';
     const front = document.createElement('div');
     front.className = 'card-face front';
-    front.innerHTML = `<div>${opt.icon}</div><div>${opt.text}</div>`;
+    renderCardFace(front, opt);
     const index = options.indexOf(opt);
     front.style.setProperty('--bg', getColor(index, options.length));
     const back = document.createElement('div');
@@ -762,7 +966,7 @@ function revealCard(card) {
   if (active.length === 0) return;
   const result = active[getRandomInt(0, active.length)];
   const front = card.querySelector('.front');
-  front.innerHTML = `<div>${result.icon}</div><div>${result.text}</div>`;
+  renderCardFace(front, result);
   const index = options.indexOf(result);
   front.style.setProperty('--bg', getColor(index, options.length));
   card.classList.remove('flipped');
@@ -1007,16 +1211,7 @@ groupNameOk.addEventListener('click', function () {
     closeGroupNameModal();
     return;
   }
-  const normalized = name.toLowerCase();
-  const existingIdx = groups.findIndex(g => g.name.trim().toLowerCase() === normalized);
-  const groupData = { name, options: JSON.parse(JSON.stringify(options)) };
-  if (existingIdx >= 0) {
-    groups[existingIdx] = groupData;
-  } else {
-    groups.push(groupData);
-  }
-  saveGroups();
-  updateGroupList();
+  upsertGroup(name, options);
   // options = []; // Don't clear options after save
   arc = countActive() > 0 ? Math.PI * 2 / countActive() : Math.PI * 2;
   saveOptions();
@@ -1027,6 +1222,44 @@ groupNameOk.addEventListener('click', function () {
   }
   closeGroupNameModal();
   openSaveConfirm();
+});
+
+shareButton.addEventListener('click', () => openShareModal('', options));
+shareCopyBtn.addEventListener('click', async () => {
+  if (!shareLinkInput.value) return;
+  const copied = await copyToClipboard(shareLinkInput.value);
+  shareStatus.textContent = copied ? '✅ Link copied to clipboard!' : 'Copy failed — select the link and copy manually.';
+});
+shareNativeBtn.addEventListener('click', async () => {
+  if (!shareLinkInput.value) return;
+  try {
+    await navigator.share({ title: 'Lucky Wheel', text: 'Spin these options with me!', url: shareLinkInput.value });
+  } catch (err) { /* user cancelled the share sheet */ }
+});
+shareClose.addEventListener('click', closeShareModal);
+shareModal.addEventListener('click', function (e) {
+  if (e.target === shareModal || e.target.classList.contains('ant-modal-mask')) {
+    closeShareModal();
+  }
+});
+
+shareLoadCancel.addEventListener('click', closeShareLoadModal);
+shareLoadModal.addEventListener('click', function (e) {
+  if (e.target === shareLoadModal || e.target.classList.contains('ant-modal-mask')) {
+    closeShareLoadModal();
+  }
+});
+shareLoadOk.addEventListener('click', function () {
+  if (!pendingShare) {
+    closeShareLoadModal();
+    return;
+  }
+  const shared = pendingShare;
+  applyOptions(shared.options);
+  if (shared.name) {
+    upsertGroup(shared.name, shared.options);
+  }
+  closeShareLoadModal();
 });
 
 saveConfirmOk.addEventListener('click', closeSaveConfirm);
@@ -1049,3 +1282,7 @@ if (currentMode === 'card') {
 } else {
   menuWheel.click();
 }
+
+handleSharedLink();
+// Pasting a share link into an already-open tab only changes the hash, so no reload happens.
+window.addEventListener('hashchange', handleSharedLink);
