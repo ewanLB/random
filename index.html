@@ -421,6 +421,76 @@
       box-shadow: 0 0 20px #ff00ff;
     }
 
+    /* Glassmorphism had no button hover at all — only cyberpunk and casino did. */
+    [data-theme="glass"] .ant-btn:hover {
+      background: rgba(255, 255, 255, 0.95);
+      color: #2d3748;
+      transform: var(--btn-hover-transform);
+      box-shadow: 0 8px 16px rgba(31, 38, 135, 0.25);
+    }
+
+    [data-theme="glass"] .ant-btn-primary:hover {
+      background: linear-gradient(135deg, #7789f0 0%, #8659b5 100%);
+      color: #fff;
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.5);
+    }
+
+    [data-theme="glass"] .ant-btn-link:hover {
+      background: rgba(255, 255, 255, 0.6);
+      color: #e53e3e;
+    }
+
+    [data-theme="casino"] .ant-btn:hover {
+      transform: var(--btn-hover-transform);
+      box-shadow: 0 6px 16px rgba(212, 175, 55, 0.35);
+    }
+
+    /* Press feedback. Needs the theme prefix to outrank the :hover rules above,
+       otherwise the hover transform sticks while the button is held down. */
+    [data-theme="glass"] .ant-btn:active,
+    [data-theme="casino"] .ant-btn:active,
+    [data-theme="cyberpunk"] .ant-btn:active {
+      transform: translateY(1px) scale(0.97);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      filter: brightness(0.95);
+    }
+
+    /* Keyboard focus was invisible in every theme. */
+    .ant-btn:focus-visible,
+    .ant-input:focus-visible,
+    #themeSelect:focus-visible,
+    #optionList input[type="checkbox"]:focus-visible {
+      outline: 3px solid var(--highlight-color);
+      outline-offset: 2px;
+    }
+
+    .ant-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* Copy confirmation. Placed after the hover rules so it wins while hovered. */
+    [data-theme="glass"] .ant-btn.is-copied,
+    [data-theme="casino"] .ant-btn.is-copied,
+    [data-theme="cyberpunk"] .ant-btn.is-copied,
+    [data-theme="glass"] .ant-btn.is-copied:hover,
+    [data-theme="casino"] .ant-btn.is-copied:hover,
+    [data-theme="cyberpunk"] .ant-btn.is-copied:hover {
+      background: #52c41a;
+      color: #fff;
+      border-color: #52c41a;
+      box-shadow: 0 0 14px rgba(82, 196, 26, 0.5);
+      animation: copiedPop 0.32s ease;
+    }
+
+    @keyframes copiedPop {
+      0% { transform: scale(0.92); }
+      55% { transform: scale(1.06); }
+      100% { transform: scale(1); }
+    }
+
     .ant-input {
       padding: 12px 20px;
       font-size: 1rem;
@@ -1108,8 +1178,15 @@
       }
 
       #groupPanel {
-        display: none;
-        /* Hide on mobile for simplicity */
+        /* This used to be display:none, but updateGroupList() sets an inline
+           display:block that always won, so a 320px fixed panel floated over the
+           wheel on phones. Let it flow in the page instead — hiding it outright
+           would also make the per-group share button unreachable on mobile. */
+        position: static;
+        width: auto;
+        max-height: 40vh;
+        /* Top margin clears the fixed mode menu pinned to the top-right corner. */
+        margin: 80px 0 16px;
       }
     }
 
@@ -1122,9 +1199,19 @@
       font-size: 12px;
     }
 
+    /* Three buttons are tight on a narrow phone, so let them wrap. */
+    #shareModal .ant-modal-footer {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+    }
+
     .share-status {
       margin-bottom: 8px;
       font-weight: 600;
+      min-height: 1.4em;
+      /* reserve space so the dialog does not jump when the message changes */
     }
 
     .share-hint {
@@ -1157,14 +1244,14 @@
     <ul id="groupList"></ul>
   </div>
   <div id="menu" class="ant-card">
-    <button id="menuToggle" class="ant-btn ant-btn-primary">☰</button>
+    <button id="menuToggle" class="ant-btn ant-btn-primary" title="Switch mode" aria-label="Switch mode">☰</button>
     <div id="menuItems">
       <button id="menuWheel" class="ant-btn">Lucky Wheel</button>
       <button id="menuCard" class="ant-btn">Lucky Draw</button>
       <button id="menuSlot" class="ant-btn">Lucky Slot</button>
     </div>
   </div>
-  <button id="muteButton" class="ant-btn">🔊</button>
+  <button id="muteButton" class="ant-btn" title="Mute or unmute sounds" aria-label="Mute or unmute sounds">🔊</button>
   <h1 id="title">Lucky Wheel</h1>
   <div id="cardContainer" style="display: none;"></div>
 
@@ -1192,9 +1279,9 @@
       <input id="newItem" type="text" placeholder="Add option" required class="ant-input">
       <button type="submit" class="ant-btn ant-btn-primary">Add</button>
     </form>
-    <button id="saveButton" class="ant-btn">Save</button>
-    <button id="shareButton" class="ant-btn">Share</button>
-    <button id="resetButton" class="ant-btn">Reset</button>
+    <button id="saveButton" class="ant-btn" title="Save these options as a named group">Save</button>
+    <button id="shareButton" class="ant-btn" title="Get a link that carries these options">Share</button>
+    <button id="resetButton" class="ant-btn" title="Replace all options with the defaults">Reset</button>
   </div>
   <ul id="optionList"></ul>
   <div id="iconList"></div>
@@ -1242,13 +1329,14 @@
             <div class="ant-modal-title">Share these options</div>
           </div>
           <div class="ant-modal-body">
-            <div id="shareStatus" class="share-status"></div>
-            <input id="shareLinkInput" class="ant-input" readonly />
+            <div id="shareStatus" class="share-status" role="status" aria-live="polite"></div>
+            <input id="shareLinkInput" class="ant-input" readonly aria-label="Share link" />
             <div id="shareHint" class="share-hint"></div>
           </div>
           <div class="ant-modal-footer">
-            <button id="shareNativeBtn" class="ant-btn" style="display:none;">Share…</button>
-            <button id="shareCopyBtn" class="ant-btn">Copy link</button>
+            <button id="shareNativeBtn" class="ant-btn" style="display:none;"
+              title="Open your device's share sheet (Messages, LINE, Mail…)">Share via app</button>
+            <button id="shareCopyBtn" class="ant-btn" title="Copy the link to your clipboard">Copy link</button>
             <button id="shareClose" class="ant-btn ant-btn-primary">Done</button>
           </div>
         </div>

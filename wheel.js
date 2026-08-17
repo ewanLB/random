@@ -138,17 +138,21 @@ function assignUniqueIcons(arr) {
 
 let options;
 let stored = JSON.parse(localStorage.getItem('wheelOptions'));
-if (stored && stored.length) {
-  if (typeof stored[0] === 'object') {
-    options = stored;
-  } else {
-    options = stored.map(t => ({ text: t, active: true }));
-  }
+const hasStoredOptions = !!(stored && stored.length);
+if (hasStoredOptions) {
+  options = typeof stored[0] === 'object' ? stored : stored.map(t => ({ text: t, active: true }));
 } else {
   options = ['Option 1', 'Option 2', 'Option 3'].map(t => ({ text: t, active: true }));
 }
-shuffleOptions();
-assignUniqueIcons(options);
+if (hasStoredOptions) {
+  // Keep the saved arrangement. Re-shuffling and re-assigning icons on every load
+  // changed the emoji on each refresh, left the list out of sync with storage, and
+  // made a shared link look different once the recipient reloaded.
+  fillMissingIcons(options);
+} else {
+  shuffleOptions();
+  assignUniqueIcons(options);
+}
 sortOptions();
 let startAngle = 0;
 let arc = Math.PI * 2 / countActive();
@@ -199,6 +203,8 @@ function updateOptionList() {
     iconInput.value = opt.icon;
     iconInput.maxLength = 2;
     iconInput.className = 'ant-input icon-input';
+    iconInput.title = 'Icon for this option';
+    iconInput.setAttribute('aria-label', 'Icon for this option');
     iconInput.addEventListener('input', () => {
       opt.icon = iconInput.value;
       saveOptions();
@@ -212,6 +218,7 @@ function updateOptionList() {
     textInput.type = 'text';
     textInput.value = opt.text;
     textInput.className = 'ant-input';
+    textInput.setAttribute('aria-label', 'Option text');
     textInput.addEventListener('input', () => {
       opt.text = textInput.value;
       saveOptions();
@@ -229,6 +236,8 @@ function updateOptionList() {
     const toggle = document.createElement('input');
     toggle.type = 'checkbox';
     toggle.checked = opt.active;
+    toggle.title = 'Include this option in the draw';
+    toggle.setAttribute('aria-label', `Include "${opt.text}" in the draw`);
     toggle.addEventListener('change', () => {
       opt.active = toggle.checked;
       sortOptions();
@@ -242,6 +251,8 @@ function updateOptionList() {
     const del = document.createElement('button');
     del.className = 'ant-btn ant-btn-link';
     del.textContent = 'x';
+    del.title = 'Remove this option';
+    del.setAttribute('aria-label', `Remove "${opt.text}"`);
     del.addEventListener('click', () => {
       options.splice(index, 1);
       arc = countActive() > 0 ? Math.PI * 2 / countActive() : Math.PI * 2;
@@ -313,6 +324,8 @@ function updateGroupList() {
     const delBtn = document.createElement('button');
     delBtn.className = 'ant-btn ant-btn-link ant-btn-sm';
     delBtn.textContent = 'x';
+    delBtn.title = `Delete group "${g.name}"`;
+    delBtn.setAttribute('aria-label', delBtn.title);
     delBtn.addEventListener('click', () => deleteGroup(idx));
 
     btnGroup.appendChild(loadBtn);
@@ -426,6 +439,19 @@ function buildShareUrl(name, opts) {
   return `${base}#${SHARE_PARAM}=${encodeShare(name, opts)}`;
 }
 
+// select() leaves the caret at the end, which scrolls the field past the start of
+// the URL; keep the readable beginning in view.
+function selectShareLink() {
+  // 'backward' puts the selection focus at the start, so the browser scrolls there
+  // instead of to the end; the rAF reset covers browsers that ignore the direction.
+  try {
+    shareLinkInput.setSelectionRange(0, shareLinkInput.value.length, 'backward');
+  } catch (err) {
+    shareLinkInput.select();
+  }
+  setTimeout(() => { shareLinkInput.scrollLeft = 0; }, 0);
+}
+
 async function copyToClipboard(text) {
   try {
     if (navigator.clipboard && window.isSecureContext) {
@@ -435,32 +461,70 @@ async function copyToClipboard(text) {
   } catch (err) { /* fall through to legacy copy */ }
   try {
     shareLinkInput.focus();
-    shareLinkInput.select();
-    return document.execCommand('copy');
+    selectShareLink();
+    const ok = document.execCommand('copy');
+    selectShareLink();
+    return ok;
   } catch (err) {
     return false;
   }
 }
 
+let copyResetTimer = null;
+
+// Re-clicking Copy link must visibly react, so restart the animation instead of
+// leaving the button in whatever state the previous click left it in.
+function showCopyResult(copied) {
+  clearTimeout(copyResetTimer);
+  shareStatus.textContent = copied
+    ? '✅ Link copied to clipboard!'
+    : '⚠️ Copy failed — select the link below and copy it manually.';
+  shareCopyBtn.classList.remove('is-copied');
+  void shareCopyBtn.offsetWidth; // force reflow so the pop animation replays
+  if (!copied) {
+    shareCopyBtn.textContent = 'Copy link';
+    return;
+  }
+  shareCopyBtn.textContent = '✅ Copied!';
+  shareCopyBtn.classList.add('is-copied');
+  copyResetTimer = setTimeout(() => {
+    shareCopyBtn.textContent = 'Copy link';
+    shareCopyBtn.classList.remove('is-copied');
+  }, 1800);
+}
+
+function resetCopyButton() {
+  clearTimeout(copyResetTimer);
+  shareCopyBtn.textContent = 'Copy link';
+  shareCopyBtn.classList.remove('is-copied');
+}
+
 async function openShareModal(name, opts) {
+  resetCopyButton();
   const active = opts.filter(o => o.active);
   if (!active.length) {
     shareStatus.textContent = 'Nothing to share — enable at least one option first.';
     shareLinkInput.value = '';
+    shareLinkInput.title = '';
     shareHint.textContent = '';
     shareNativeBtn.style.display = 'none';
+    shareCopyBtn.disabled = true;
     shareModal.style.display = 'flex';
     return;
   }
   const url = buildShareUrl(name, opts);
   shareLinkInput.value = url;
+  shareLinkInput.title = url; // the field truncates, so expose the full link on hover
   shareHint.textContent = url.length > SHARE_LINK_WARN_LENGTH
     ? 'This link is long — some chat apps may cut it off. Consider sharing fewer options.'
     : 'Anyone who opens this link gets the same options.';
   shareNativeBtn.style.display = navigator.share ? '' : 'none';
+  shareCopyBtn.disabled = false;
+  // Clear first: without this the previous "copied" message stays on screen
+  // while the clipboard write is still pending.
+  shareStatus.textContent = 'Copying link…';
   shareModal.style.display = 'flex';
-  const copied = await copyToClipboard(url);
-  shareStatus.textContent = copied ? '✅ Link copied to clipboard!' : 'Copy the link below to share.';
+  showCopyResult(await copyToClipboard(url));
 }
 
 function closeShareModal() {
@@ -1199,6 +1263,12 @@ menuToggle.addEventListener('click', function () {
 saveButton.addEventListener('click', openGroupNameModal);
 
 groupNameCancel.addEventListener('click', closeGroupNameModal);
+groupNameInput.addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    groupNameOk.click();
+  }
+});
 groupNameModal.addEventListener('click', function (e) {
   if (e.target === groupNameModal || e.target.classList.contains('ant-modal-mask')) {
     closeGroupNameModal();
@@ -1227,9 +1297,11 @@ groupNameOk.addEventListener('click', function () {
 shareButton.addEventListener('click', () => openShareModal('', options));
 shareCopyBtn.addEventListener('click', async () => {
   if (!shareLinkInput.value) return;
-  const copied = await copyToClipboard(shareLinkInput.value);
-  shareStatus.textContent = copied ? '✅ Link copied to clipboard!' : 'Copy failed — select the link and copy manually.';
+  showCopyResult(await copyToClipboard(shareLinkInput.value));
 });
+// Readonly fields do not select on click by default; make grabbing the link easy.
+shareLinkInput.addEventListener('focus', selectShareLink);
+shareLinkInput.addEventListener('click', selectShareLink);
 shareNativeBtn.addEventListener('click', async () => {
   if (!shareLinkInput.value) return;
   try {
@@ -1270,6 +1342,7 @@ saveConfirmModal.addEventListener('click', function (e) {
 });
 
 muteButton.textContent = muted ? '🔇' : '🔊';
+saveOptions(); // persist any icons filled in above so the list matches storage
 updateOptionList();
 updateGroupList();
 resizeCanvas();
@@ -1286,3 +1359,17 @@ if (currentMode === 'card') {
 handleSharedLink();
 // Pasting a share link into an already-open tab only changes the hash, so no reload happens.
 window.addEventListener('hashchange', handleSharedLink);
+
+// Every dialog was mouse-only before; Escape now dismisses whichever one is open.
+document.addEventListener('keydown', function (e) {
+  if (e.key !== 'Escape') return;
+  const isOpen = el => el && getComputedStyle(el).display !== 'none';
+  if (isOpen(shareModal)) return closeShareModal();
+  if (isOpen(shareLoadModal)) return closeShareLoadModal();
+  if (isOpen(groupNameModal)) return closeGroupNameModal();
+  if (isOpen(saveConfirmModal)) return closeSaveConfirm();
+  if (isOpen(modalOverlay)) {
+    modalOverlay.style.display = 'none';
+    if (currentMode === 'card') initCards();
+  }
+});
