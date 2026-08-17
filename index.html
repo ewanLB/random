@@ -37,6 +37,23 @@
       --modal-border: 1px solid rgba(255, 255, 255, 0.6);
       --card-back-bg: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
       --card-border: 1px solid rgba(255, 255, 255, 0.8);
+      --card-glow: 0 8px 20px rgba(31, 38, 135, 0.18);
+      --row-bg: rgba(255, 255, 255, 0.45);
+      --row-hover-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+      /* Destructive and success buttons follow the theme instead of one hardcoded
+         red/green that clashed with casino and cyberpunk. */
+      --danger-bg: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+      --danger-color: #fff;
+      --danger-border: none;
+      --danger-hover-bg: linear-gradient(135deg, #fb8a8a 0%, #e63535 100%);
+      --danger-hover-color: #fff;
+      --danger-glow: 0 8px 20px rgba(220, 38, 38, 0.45);
+      /* Flat accent for icon-sized destructive controls, e.g. the row delete button. */
+      --danger-accent: #e53e3e;
+      --success-bg: linear-gradient(135deg, #4ade80 0%, #16a34a 100%);
+      --success-color: #fff;
+      --success-border: none;
+      --success-glow: 0 8px 20px rgba(22, 163, 74, 0.45);
       /* Slot geometry lives in variables so the mobile query can shrink the whole
          machine at once and wheel.js can scroll the strip in calc() units. */
       --reel-w: 100px;
@@ -67,6 +84,20 @@
       --modal-border: 2px solid #d4af37;
       --card-back-bg: repeating-linear-gradient(45deg, #500000, #500000 10px, #300000 10px, #300000 20px);
       --card-border: 4px solid #d4af37;
+      --card-glow: 0 8px 20px rgba(0, 0, 0, 0.45);
+      --row-bg: rgba(0, 0, 0, 0.35);
+      --row-hover-shadow: 0 6px 16px rgba(212, 175, 55, 0.35);
+      --danger-bg: linear-gradient(135deg, #8b1a1a, #c62828);
+      --danger-color: #ffe9b0;
+      --danger-border: 1px solid #d4af37;
+      --danger-hover-bg: linear-gradient(135deg, #a52020, #e03131);
+      --danger-hover-color: #fff6d5;
+      --danger-glow: 0 6px 16px rgba(212, 175, 55, 0.4);
+      --danger-accent: #ff5252;
+      --success-bg: linear-gradient(135deg, #1b5e20, #2e7d32);
+      --success-color: #ffe9b0;
+      --success-border: 1px solid #d4af37;
+      --success-glow: 0 6px 16px rgba(212, 175, 55, 0.4);
     }
 
     /* Cyberpunk Theme Overrides */
@@ -96,6 +127,22 @@
       --modal-border: 1px solid #00f3ff;
       --card-back-bg: #ff00ff;
       --card-border: 1px solid #00f3ff;
+      --card-glow: 0 0 10px rgba(0, 243, 255, 0.3);
+      --row-bg: rgba(0, 243, 255, 0.05);
+      --row-hover-shadow: 0 0 15px rgba(0, 243, 255, 0.5);
+      /* Neon red rather than the flat web red, and outlined like every other
+         cyberpunk button until you hover it. */
+      --danger-bg: rgba(255, 42, 109, 0.12);
+      --danger-color: #ff2a6d;
+      --danger-border: 1px solid #ff2a6d;
+      --danger-hover-bg: #ff2a6d;
+      --danger-hover-color: #05050f;
+      --danger-glow: 0 0 20px #ff2a6d;
+      --danger-accent: #ff2a6d;
+      --success-bg: rgba(57, 255, 20, 0.12);
+      --success-color: #39ff14;
+      --success-border: 1px solid #39ff14;
+      --success-glow: 0 0 20px #39ff14;
     }
 
     body {
@@ -280,12 +327,8 @@
 
     #optionList li:hover {
       transform: var(--btn-hover-transform);
-      box-shadow: 0 0 15px rgba(0, 243, 255, 0.5);
-      /* Cyberpunk specific, might need to generalize */
-    }
-
-    [data-theme="glass"] #optionList li:hover {
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+      /* Was a hardcoded cyberpunk cyan glow that leaked into the casino theme. */
+      box-shadow: var(--row-hover-shadow);
     }
 
     [data-theme="casino"] #optionList li:hover {
@@ -321,13 +364,14 @@
       border: none;
       cursor: pointer;
       font-size: 1.2em;
-      color: #ff4d4d;
+      color: var(--danger-accent);
       opacity: 0.8;
     }
 
     [data-theme="cyberpunk"] #optionList button {
-      color: #ff00ff;
-      text-shadow: 0 0 5px #ff00ff;
+      /* Magenta is this theme's primary accent, so a magenta delete read as "confirm".
+         Keep the neon glow, use the theme's danger colour. */
+      text-shadow: 0 0 5px var(--danger-accent);
     }
 
     #optionList button:hover {
@@ -457,7 +501,7 @@
 
     [data-theme="glass"] .ant-btn-link:hover {
       background: rgba(255, 255, 255, 0.6);
-      color: #e53e3e;
+      color: var(--danger-accent);
     }
 
     [data-theme="casino"] .ant-btn:hover {
@@ -465,21 +509,22 @@
       box-shadow: 0 6px 16px rgba(212, 175, 55, 0.35);
     }
 
-    /* Destructive confirmations should look destructive in every theme. */
+    /* Destructive confirmations should look destructive, but in the theme's own palette:
+       a flat web red sat wrong on casino gold and cyberpunk neon. */
     [data-theme="glass"] .ant-btn-danger,
     [data-theme="casino"] .ant-btn-danger,
     [data-theme="cyberpunk"] .ant-btn-danger {
-      background: #e53e3e;
-      color: #fff;
-      border-color: #e53e3e;
+      background: var(--danger-bg);
+      color: var(--danger-color);
+      border: var(--danger-border);
     }
 
     [data-theme="glass"] .ant-btn-danger:hover,
     [data-theme="casino"] .ant-btn-danger:hover,
     [data-theme="cyberpunk"] .ant-btn-danger:hover {
-      background: #c53030;
-      color: #fff;
-      box-shadow: 0 8px 20px rgba(229, 62, 62, 0.45);
+      background: var(--danger-hover-bg);
+      color: var(--danger-hover-color);
+      box-shadow: var(--danger-glow);
     }
 
     /* Press feedback. Needs the theme prefix to outrank the :hover rules above,
@@ -515,10 +560,10 @@
     [data-theme="glass"] .ant-btn.is-copied:hover,
     [data-theme="casino"] .ant-btn.is-copied:hover,
     [data-theme="cyberpunk"] .ant-btn.is-copied:hover {
-      background: #52c41a;
-      color: #fff;
-      border-color: #52c41a;
-      box-shadow: 0 0 14px rgba(82, 196, 26, 0.5);
+      background: var(--success-bg);
+      color: var(--success-color);
+      border: var(--success-border);
+      box-shadow: var(--success-glow);
       animation: copiedPop 0.32s ease;
     }
 
@@ -615,11 +660,12 @@
       font-size: 0.8em;
     }
 
-    /* The footers relied on inline whitespace, so Cancel and OK sat almost touching. */
+    /* The footers relied on inline whitespace, so Cancel and OK sat almost touching.
+       Centred, because the dialog bodies are centred text too. */
     .ant-modal-footer {
       display: flex;
       flex-wrap: wrap;
-      justify-content: flex-end;
+      justify-content: center;
       gap: 8px;
     }
 
@@ -768,9 +814,10 @@
       overflow: hidden;
       text-align: center;
       overflow-wrap: anywhere;
-      box-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
-      /* Cyberpunk default */
-      border: 1px solid var(--neon-cyan);
+      /* Both of these were cyberpunk values applied to every theme, and --neon-cyan
+         was never defined anywhere, so the border silently did nothing. */
+      box-shadow: var(--card-glow);
+      border: var(--card-border);
       /* Cyberpunk default */
       background: rgba(0, 0, 0, 0.8);
       /* Cyberpunk default */
@@ -1009,17 +1056,19 @@
     #themeSelect {
       padding: 8px 12px;
       border-radius: 8px;
-      border: 1px solid rgba(255, 255, 255, 0.5);
-      background: rgba(0, 0, 0, 0.5);
-      color: #fff;
-      font-family: 'Inter', sans-serif;
+      /* Was a black pill with white text in every theme, which read as a foreign
+         control on the light glass background. */
+      border: var(--input-border);
+      background: var(--input-bg);
+      color: var(--text-color);
+      font-family: var(--font-main);
       cursor: pointer;
       backdrop-filter: blur(5px);
     }
 
     #themeSelect:focus {
       outline: none;
-      border-color: #fff;
+      border-color: var(--highlight-color);
     }
 
     /* Animations */
@@ -1163,8 +1212,10 @@
       justify-content: space-between;
       padding: 8px 12px;
       border-radius: 4px;
-      background: rgba(0, 0, 0, 0.2);
-      color: #fff;
+      /* Dark translucent rows with white text were nearly unreadable inside the
+         light glass panel. */
+      background: var(--row-bg);
+      color: var(--text-color);
     }
 
     [data-theme="cyberpunk"] #groupList li {
