@@ -339,8 +339,7 @@
       background: rgba(0, 243, 255, 0.2);
     }
 
-    #optionList li input[type="text"],
-    #optionList li .icon-input {
+    #optionList li input[type="text"] {
       background: transparent;
       border: none;
       border-bottom: 1px solid rgba(255, 255, 255, 0.3);
@@ -358,7 +357,9 @@
       border-bottom-color: var(--highlight-color);
     }
 
-    #optionList button {
+    /* Scoped to the delete button: the row also holds the icon picker button now, which
+       must not inherit the destructive colour. */
+    #optionList .ant-btn-link {
       margin-left: 8px;
       background: transparent;
       border: none;
@@ -368,13 +369,13 @@
       opacity: 0.8;
     }
 
-    [data-theme="cyberpunk"] #optionList button {
+    [data-theme="cyberpunk"] #optionList .ant-btn-link {
       /* Magenta is this theme's primary accent, so a magenta delete read as "confirm".
          Keep the neon glow, use the theme's danger colour. */
       text-shadow: 0 0 5px var(--danger-accent);
     }
 
-    #optionList button:hover {
+    #optionList .ant-btn-link:hover {
       opacity: 1;
       transform: scale(1.1);
     }
@@ -541,6 +542,7 @@
     .ant-btn:focus-visible,
     .ant-input:focus-visible,
     #themeSelect:focus-visible,
+    #optionList li .icon-btn:focus-visible,
     #optionList input[type="checkbox"]:focus-visible {
       outline: 3px solid var(--highlight-color);
       outline-offset: 2px;
@@ -1260,12 +1262,143 @@
       box-sizing: border-box;
     }
 
-    /* Needs input[type="text"] too: the rule above is more specific than a bare
-       .icon-input, so the emoji field was rendering 120px wide. */
-    #optionList li input.icon-input[type="text"] {
+    /* The icon used to be a 42px text box: changing one meant summoning the system emoji
+       keyboard, and there was no way to see what else was on offer. It is now a button
+       that opens #iconPicker. */
+    #optionList li .icon-btn {
       margin-left: 6px;
       width: 42px;
+      height: 30px;
+      padding: 0;
+      font-size: 1.1em;
+      line-height: 1;
+      cursor: pointer;
+      background: var(--input-bg);
+      border: var(--input-border);
+      border-radius: calc(var(--btn-radius) / 2);
+      color: inherit;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    #optionList li .icon-btn:hover,
+    #optionList li .icon-btn[aria-expanded="true"] {
+      border-color: var(--highlight-color);
+      transform: scale(1.08);
+    }
+
+    /* An option can have no icon at all; keep the button findable instead of blank. */
+    #optionList li .icon-btn:empty::after {
+      content: '＋';
+      opacity: 0.6;
+    }
+
+    #iconPicker {
+      position: absolute;
+      z-index: 1200;
+      flex-direction: column;
+      gap: 8px;
+      width: min(320px, calc(100vw - 24px));
+      padding: 12px;
+      box-sizing: border-box;
+      background: var(--modal-bg);
+      border: var(--modal-border);
+      border-radius: var(--panel-radius);
+      box-shadow: var(--panel-shadow);
+      color: var(--text-color);
+      font-family: var(--font-main);
+    }
+
+    [data-theme="glass"] #iconPicker {
+      backdrop-filter: blur(10px);
+    }
+
+    .icon-picker-search {
+      width: 100%;
+      box-sizing: border-box;
+      /* The app's inputs are chunky by default, which crowded the grid out of a popover
+         this size. */
+      padding: 8px 14px;
+    }
+
+    .icon-picker-body {
+      max-height: 240px;
+      overflow-y: auto;
+      /* Don't hand the scroll on to the page once the list bottoms out. */
+      overscroll-behavior: contain;
+    }
+
+    .icon-picker-group-name {
+      position: sticky;
+      top: 0;
+      margin: 4px 0;
+      padding: 2px 0;
+      background: var(--modal-bg);
+      font-size: 0.7em;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      opacity: 0.75;
+    }
+
+    .icon-picker-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(34px, 1fr));
+      gap: 4px;
+    }
+
+    .icon-picker-grid button {
+      aspect-ratio: 1;
+      padding: 0;
+      font-size: 1.3em;
+      line-height: 1;
+      cursor: pointer;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: calc(var(--btn-radius) / 2);
+      color: inherit;
+      transition: transform 0.15s, background 0.15s;
+    }
+
+    .icon-picker-grid button:hover,
+    .icon-picker-grid button:focus-visible {
+      background: var(--row-bg);
+      border-color: var(--highlight-color);
+      outline: none;
+      transform: scale(1.15);
+    }
+
+    /* The icon this option is already using. */
+    .icon-picker-grid button[aria-pressed="true"] {
+      border-color: var(--highlight-color);
+      box-shadow: 0 0 0 2px var(--highlight-color);
+    }
+
+    .icon-picker-empty {
+      padding: 8px 0;
+      font-size: 0.85em;
       text-align: center;
+      opacity: 0.75;
+    }
+
+    .icon-picker-foot {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .icon-picker-foot .ant-input {
+      flex: 1 1 80px;
+      min-width: 0;
+      /* Match the buttons beside it rather than towering over them. */
+      padding: 5px 8px;
+      font-size: 0.9em;
+      text-align: center;
+    }
+
+    .icon-picker-foot .ant-btn {
+      padding: 4px 10px;
+      font-size: 0.85em;
     }
 
     /* From 1280px up the saved-group panel is pinned to the top-left corner and the mode
@@ -1517,6 +1650,17 @@
   </div>
   <ul id="optionList"></ul>
   <div id="iconList"></div>
+  <div id="iconPicker" role="dialog" aria-modal="true" aria-label="Choose an icon" style="display:none;">
+    <input id="iconSearch" type="search" class="ant-input icon-picker-search" placeholder="Search icons"
+      aria-label="Search icons" autocomplete="off">
+    <div id="iconPickerBody" class="icon-picker-body"></div>
+    <div class="icon-picker-foot">
+      <input id="iconCustom" type="text" class="ant-input" maxlength="4" placeholder="Your own"
+        aria-label="Type or paste your own icon">
+      <button id="iconRandomBtn" type="button" class="ant-btn">Random</button>
+      <button id="iconClearBtn" type="button" class="ant-btn">None</button>
+    </div>
+  </div>
   <div id="modalOverlay" role="dialog" aria-modal="true" aria-label="Result" tabindex="-1">
     <div class="modal" id="modalContent"></div>
   </div>

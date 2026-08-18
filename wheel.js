@@ -122,7 +122,114 @@ function playFlipSound() {
   osc.stop(audioCtx.currentTime + 0.1);
 }
 
-const ICONS = ['🍀', '🌟', '🍭', '🍉', '🍣', '🧩', '🎈', '🐱', '🐶', '🐻'];
+/* ---------- Icons ---------- */
+
+// There used to be ten icons, so an eleventh option had to reuse one and the only way
+// to change an icon was to type an emoji into a 42px box. The pool is now grouped and
+// searchable so the picker can browse it; each entry is "emoji keyword keyword…" and
+// the keywords are what the search box matches. Single code point emoji only — the icon
+// travels through the share link, which caps each one at four UTF-16 units.
+const ICON_GROUP_SOURCE = [
+  {
+    name: 'Faces',
+    entries: [
+      '😀 grin happy smile', '😂 laugh tears joy', '🥳 party celebrate', '😎 cool sunglasses',
+      '🤩 star eyes wow', '🥰 love hearts', '😍 heart eyes crush', '🤔 think hmm maybe',
+      '🙃 upside down silly', '😴 sleep tired bed', '🤯 mind blown shock', '😇 angel halo good',
+      '🤠 cowboy hat', '🥺 plead puppy eyes', '😭 cry sob sad', '😡 angry mad rage',
+      '🤢 sick gross yuck', '🤖 robot bot machine', '👻 ghost spooky boo', '👽 alien ufo space',
+      '💀 skull dead bones', '🤡 clown joker', '🦸 hero super', '🧙 wizard mage magic'
+    ]
+  },
+  {
+    name: 'Animals',
+    entries: [
+      '🐱 cat kitten meow', '🐶 dog puppy woof', '🐭 mouse', '🐹 hamster', '🐰 rabbit bunny',
+      '🦊 fox', '🐻 bear', '🐼 panda', '🐨 koala', '🐯 tiger', '🦁 lion', '🐮 cow moo',
+      '🐷 pig oink', '🐸 frog', '🐵 monkey', '🐔 chicken hen', '🐧 penguin', '🦉 owl bird',
+      '🦄 unicorn', '🐝 bee honey', '🦋 butterfly', '🐢 turtle slow', '🐙 octopus',
+      '🐬 dolphin', '🐳 whale', '🦖 dinosaur rex'
+    ]
+  },
+  {
+    name: 'Food',
+    entries: [
+      '🍎 apple fruit', '🍊 orange fruit', '🍋 lemon sour', '🍉 watermelon', '🍇 grapes',
+      '🍓 strawberry', '🍑 peach', '🍍 pineapple', '🥑 avocado', '🌽 corn', '🍞 bread toast',
+      '🥐 croissant', '🧀 cheese', '🍔 burger', '🍟 fries chips', '🍕 pizza', '🌮 taco',
+      '🍜 ramen noodles soup', '🍣 sushi', '🍱 bento lunch box', '🍚 rice', '🥟 dumpling',
+      '🍗 chicken drumstick', '🥩 steak beef meat', '🍦 icecream soft', '🍰 cake slice',
+      '🍩 donut', '🍪 cookie biscuit', '🍭 lollipop candy', '🍫 chocolate', '☕ coffee',
+      '🍵 tea green', '🧋 bubble tea boba', '🍺 beer', '🍷 wine', '🥤 soda drink cup'
+    ]
+  },
+  {
+    name: 'Play',
+    entries: [
+      '⚽ soccer football', '🏀 basketball', '🏈 american football', '⚾ baseball', '🎾 tennis',
+      '🏐 volleyball', '🏓 pingpong table tennis', '🏸 badminton', '🥊 boxing glove',
+      '🎯 dart target bullseye', '🎳 bowling', '🎮 game controller video', '🎲 dice board game',
+      '🧩 puzzle jigsaw', '🎨 art paint draw', '🎤 mic sing karaoke', '🎸 guitar music',
+      '🎹 piano keyboard', '🎬 movie film clapper', '📚 books read study', '🏆 trophy win first',
+      '🥇 gold medal', '🏃 run jog', '🚴 bike cycle ride', '🏊 swim pool', '🧘 yoga meditate calm',
+      '⛺ camp tent outdoors', '🎣 fishing rod'
+    ]
+  },
+  {
+    name: 'Places',
+    entries: [
+      '🚗 car drive', '🚕 taxi cab', '🚌 bus', '🚲 bicycle', '🛴 scooter kick', '🚂 train rail',
+      '✈️ plane flight fly', '🚀 rocket launch', '🛸 ufo saucer', '⛵ sailboat sail',
+      '🚢 ship cruise', '🌴 palm tree beach', '🧭 compass direction', '🌋 volcano',
+      '🏠 house home', '🏢 office building work', '🏫 school class', '🏥 hospital clinic',
+      '🏰 castle', '🗼 tower landmark', '🎡 ferris wheel fair', '🎢 rollercoaster theme park',
+      '🎪 circus tent', '🌍 earth world globe', '🗿 moai statue', '🚦 traffic light stop'
+    ]
+  },
+  {
+    name: 'Nature',
+    entries: [
+      '🌸 blossom flower sakura', '🌺 hibiscus flower', '🌻 sunflower', '🌹 rose flower',
+      '🌷 tulip flower', '🍀 clover luck lucky', '🌱 sprout plant grow', '🌲 tree forest',
+      '🌵 cactus desert', '🍁 maple leaf autumn', '🍄 mushroom', '🌞 sun sunny day',
+      '🌈 rainbow', '⭐ star', '🌟 sparkle star shine', '🌙 moon night', '☁️ cloud cloudy',
+      '❄️ snowflake snow cold', '🔥 fire hot flame', '💧 water drop', '🌊 wave ocean sea',
+      '⚡ lightning bolt power'
+    ]
+  },
+  {
+    name: 'Things',
+    entries: [
+      '💡 idea bulb light', '🔑 key unlock', '🔒 lock secure', '🎁 gift present box',
+      '🎈 balloon', '🎉 party popper celebrate', '🎊 confetti ball', '💎 gem diamond',
+      '👑 crown king queen', '💰 money bag cash', '💳 card pay credit', '📱 phone mobile',
+      '💻 laptop computer', '⌚ watch time', '⏰ alarm clock wake', '📷 camera photo',
+      '🔔 bell ring notify', '📌 pin pushpin', '✏️ pencil write', '📖 book open read',
+      '📦 box package parcel', '🧸 teddy bear toy', '🛒 cart shopping buy', '🧪 flask lab science',
+      '🔮 crystal ball fortune', '❤️ heart red love', '💖 sparkling heart', '✨ sparkles shiny',
+      '✅ check yes done', '❓ question unknown', '❗ exclamation important'
+    ]
+  }
+];
+
+const ICON_GROUPS = ICON_GROUP_SOURCE.map(group => ({
+  name: group.name,
+  icons: group.entries.map(entry => {
+    const parts = entry.split(' ');
+    return { icon: parts[0], keywords: parts.slice(1).join(' ') };
+  })
+}));
+
+const ICONS = ICON_GROUPS.reduce((all, group) => all.concat(group.icons.map(i => i.icon)), []);
+
+function shuffledIcons() {
+  const pool = ICONS.slice();
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = getRandomInt(0, i + 1);
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool;
+}
 
 function getAvailableIcons() {
   return ICONS.filter(ic => !options.some(o => o.icon === ic));
@@ -135,11 +242,12 @@ function getUniqueIcon() {
 }
 
 function assignUniqueIcons(arr) {
-  const used = new Set();
-  arr.forEach(o => {
-    const pool = ICONS.filter(ic => !used.has(ic));
-    o.icon = pool.length ? pool[getRandomInt(0, pool.length)] : ICONS[getRandomInt(0, ICONS.length)];
-    used.add(o.icon);
+  // Walking a shuffled pool instead of drawing at random keeps the first ICONS.length
+  // options guaranteed distinct, and a longer list repeats in a fixed order rather than
+  // doubling up two rows apart.
+  const pool = shuffledIcons();
+  arr.forEach((o, i) => {
+    o.icon = pool[i % pool.length];
   });
 }
 
@@ -261,6 +369,172 @@ function closeSaveConfirm() {
   closeDialog(saveConfirmModal);
 }
 
+/* ---------- Icon picker ---------- */
+
+const iconPicker = document.getElementById('iconPicker');
+const iconSearch = document.getElementById('iconSearch');
+const iconPickerBody = document.getElementById('iconPickerBody');
+const iconCustom = document.getElementById('iconCustom');
+const iconRandomBtn = document.getElementById('iconRandomBtn');
+const iconClearBtn = document.getElementById('iconClearBtn');
+
+// { option, button } while the popover is open, null otherwise.
+let iconPickerTarget = null;
+
+function setOptionIcon(option, icon) {
+  option.icon = icon;
+  saveOptions();
+  drawRouletteWheel();
+  if (currentMode === 'card') initCards();
+  if (currentMode === 'slot') initSlot();
+  // The legend under the list used to go stale until the next full re-render.
+  updateIconList();
+}
+
+function renderIconPicker(query) {
+  const q = query.trim().toLowerCase();
+  const current = iconPickerTarget ? iconPickerTarget.option.icon : '';
+  iconPickerBody.innerHTML = '';
+  let shown = 0;
+  ICON_GROUPS.forEach(group => {
+    const inGroupName = group.name.toLowerCase().includes(q);
+    const matches = q
+      ? group.icons.filter(i => inGroupName || i.icon === q || i.keywords.includes(q))
+      : group.icons;
+    if (!matches.length) return;
+    const label = document.createElement('div');
+    label.className = 'icon-picker-group-name';
+    label.textContent = group.name;
+    iconPickerBody.appendChild(label);
+    const grid = document.createElement('div');
+    grid.className = 'icon-picker-grid';
+    matches.forEach(entry => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = entry.icon;
+      btn.title = entry.keywords;
+      btn.setAttribute('aria-label', entry.keywords || entry.icon);
+      btn.setAttribute('aria-pressed', entry.icon === current ? 'true' : 'false');
+      btn.addEventListener('click', () => applyPickedIcon(entry.icon));
+      grid.appendChild(btn);
+    });
+    iconPickerBody.appendChild(grid);
+    shown += matches.length;
+  });
+  if (!shown) {
+    const empty = document.createElement('div');
+    empty.className = 'icon-picker-empty';
+    empty.textContent = 'Nothing matches. Type or paste your own below.';
+    iconPickerBody.appendChild(empty);
+  }
+}
+
+function positionIconPicker(anchor) {
+  const rect = anchor.getBoundingClientRect();
+  const gap = 8;
+  const width = iconPicker.offsetWidth;
+  const height = iconPicker.offsetHeight;
+  const viewportW = document.documentElement.clientWidth;
+  let left = rect.left + rect.width / 2 - width / 2;
+  left = Math.max(gap, Math.min(left, viewportW - width - gap));
+  // Flip above the row when the popover would hang off the bottom of the window.
+  const below = rect.bottom + gap;
+  const above = rect.top - gap - height;
+  const top = below + height > window.innerHeight && above > 0 ? above : below;
+  // Page coordinates, so the popover stays glued to its row while the page scrolls.
+  iconPicker.style.left = `${left + window.scrollX}px`;
+  iconPicker.style.top = `${top + window.scrollY}px`;
+}
+
+function openIconPicker(option, button) {
+  iconPickerTarget = { option, button };
+  iconSearch.value = '';
+  iconCustom.value = option.icon || '';
+  renderIconPicker('');
+  button.setAttribute('aria-expanded', 'true');
+  // Measure before positioning, and focus the button first so closing returns there.
+  iconPicker.style.display = 'flex';
+  positionIconPicker(button);
+  button.focus();
+  openDialog(iconPicker, iconSearch);
+}
+
+function closeIconPicker() {
+  if (!iconPickerTarget) return;
+  iconPickerTarget.button.setAttribute('aria-expanded', 'false');
+  iconPickerTarget = null;
+  closeDialog(iconPicker);
+}
+
+function applyPickedIcon(icon) {
+  if (!iconPickerTarget) return;
+  const { option, button } = iconPickerTarget;
+  setOptionIcon(option, icon);
+  // Update the row in place; a full re-render here would throw focus away.
+  button.textContent = icon;
+  closeIconPicker();
+}
+
+iconSearch.addEventListener('input', () => {
+  renderIconPicker(iconSearch.value);
+  if (iconPickerTarget) positionIconPicker(iconPickerTarget.button);
+});
+
+iconSearch.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== 'ArrowDown') return;
+  const first = iconPickerBody.querySelector('button');
+  if (!first) return;
+  e.preventDefault();
+  if (e.key === 'Enter') first.click();
+  else first.focus();
+});
+
+// Arrow keys walk the grid; tabbing through 200 emoji one at a time is nobody's idea of
+// accessible.
+iconPickerBody.addEventListener('keydown', e => {
+  const steps = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: 0, ArrowUp: 0 };
+  if (!(e.key in steps)) return;
+  const buttons = Array.from(iconPickerBody.querySelectorAll('button'));
+  const idx = buttons.indexOf(document.activeElement);
+  if (idx < 0) return;
+  e.preventDefault();
+  const grid = document.activeElement.parentElement;
+  const perRow = getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length || 1;
+  let step = steps[e.key];
+  if (e.key === 'ArrowDown') step = perRow;
+  if (e.key === 'ArrowUp') step = -perRow;
+  const next = buttons[Math.min(buttons.length - 1, Math.max(0, idx + step))];
+  if (next) next.focus();
+});
+
+// Anything the pool does not cover — a flag, a CJK character, a brand emoji.
+iconCustom.addEventListener('input', () => {
+  if (!iconPickerTarget) return;
+  const value = iconCustom.value.trim();
+  setOptionIcon(iconPickerTarget.option, value);
+  iconPickerTarget.button.textContent = value;
+});
+
+iconCustom.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    closeIconPicker();
+  }
+});
+
+iconRandomBtn.addEventListener('click', () => applyPickedIcon(getUniqueIcon()));
+iconClearBtn.addEventListener('click', () => applyPickedIcon(''));
+
+document.addEventListener('pointerdown', e => {
+  if (!iconPickerTarget) return;
+  if (iconPicker.contains(e.target) || iconPickerTarget.button.contains(e.target)) return;
+  closeIconPicker();
+});
+
+window.addEventListener('resize', () => {
+  if (iconPickerTarget) positionIconPicker(iconPickerTarget.button);
+});
+
 function countActive() {
   return options.filter(o => o.active).length;
 }
@@ -270,27 +544,28 @@ function saveOptions() {
 }
 
 function updateOptionList() {
+  // The rows are about to be thrown away, so the popover cannot stay anchored to one.
+  closeIconPicker();
   optionList.innerHTML = '';
   const activeCount = countActive();
   options.forEach((opt, index) => {
     const li = document.createElement('li');
     li.style.background = getColor(index, options.length);
 
-    const iconInput = document.createElement('input');
-    iconInput.type = 'text';
-    iconInput.value = opt.icon;
-    iconInput.maxLength = 2;
-    iconInput.className = 'ant-input icon-input';
-    iconInput.title = 'Icon for this option';
-    iconInput.setAttribute('aria-label', 'Icon for this option');
-    iconInput.addEventListener('input', () => {
-      opt.icon = iconInput.value;
-      saveOptions();
-      drawRouletteWheel();
-      if (currentMode === 'card') initCards();
-      if (currentMode === 'slot') initSlot();
+    const iconBtn = document.createElement('button');
+    iconBtn.type = 'button';
+    iconBtn.className = 'icon-btn';
+    iconBtn.textContent = opt.icon || '';
+    iconBtn.title = 'Change the icon for this option';
+    iconBtn.setAttribute('aria-label', `Change the icon for "${opt.text}"`);
+    iconBtn.setAttribute('aria-haspopup', 'dialog');
+    iconBtn.setAttribute('aria-expanded', 'false');
+    iconBtn.addEventListener('click', () => {
+      // Second click on the same row closes it again.
+      if (iconPickerTarget && iconPickerTarget.button === iconBtn) closeIconPicker();
+      else openIconPicker(opt, iconBtn);
     });
-    li.appendChild(iconInput);
+    li.appendChild(iconBtn);
 
     const textInput = document.createElement('input');
     textInput.type = 'text';
@@ -510,10 +785,13 @@ function encodeShare(name, opts) {
 
 function fillMissingIcons(opts) {
   const used = new Set(opts.map(o => o.icon).filter(Boolean));
+  const pool = shuffledIcons();
+  let next = 0;
   opts.forEach(o => {
     if (o.icon) return;
-    const pool = ICONS.filter(ic => !used.has(ic));
-    o.icon = pool.length ? pool[getRandomInt(0, pool.length)] : ICONS[getRandomInt(0, ICONS.length)];
+    // Take the next icon nobody is using; once every one is taken, any will do.
+    while (next < pool.length && used.has(pool[next])) next++;
+    o.icon = next < pool.length ? pool[next] : pool[getRandomInt(0, pool.length)];
     used.add(o.icon);
   });
 }
@@ -1600,6 +1878,7 @@ window.addEventListener('hashchange', handleSharedLink);
 document.addEventListener('keydown', function (e) {
   if (e.key !== 'Escape' || !openDialogs.length) return;
   const dialog = openDialogs[openDialogs.length - 1];
+  if (dialog === iconPicker) return closeIconPicker();
   if (dialog === shareModal) return closeShareModal();
   if (dialog === shareLoadModal) return closeShareLoadModal();
   if (dialog === groupNameModal) return closeGroupNameModal();

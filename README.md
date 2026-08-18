@@ -9,7 +9,7 @@ and spin a wheel to randomly choose one.
 - Stylish wheel with animated pointer
 - Sound effects for spinning and celebrating
 - Options can be toggled on/off without deletion
-- Each option is displayed with a random emoji icon
+- Each option gets its own emoji, changeable through a searchable picker
 - Results are shown in a pop-up modal
 - Save sets of options into named groups for later loading
 - One-click sharing: copy a link that carries your options to anyone else
@@ -34,9 +34,17 @@ apps truncate them, and a warning appears past ~4000 characters.
 
 ## Icons
 
-The wheel uses the following emoji icons by default:
+Every option carries an emoji, drawn from a pool of ~190 grouped into **Faces,
+Animals, Food, Play, Places, Nature** and **Things**. New options take an icon
+nothing else is using, so a list only starts repeating past the size of the pool.
 
-🍀 🌟 🍭 🍉 🍣 🧩 🎈 🐱 🐶 🐻
+Click the emoji button on any row to open the picker: search by keyword
+(`noodle`, `luck`, `cat`) or by group name, hit **Random** for an unused one,
+**None** for no icon at all, or type/paste your own in the field at the bottom —
+handy for flags, letters, or anything the pool doesn't cover. The grid takes
+arrow keys, Enter picks the first search match, and Escape closes.
 
-You can replace them by editing the `ICONS` array in `wheel.js` or by
-changing each option's icon directly in the list.
+To change the pool itself, edit `ICON_GROUP_SOURCE` in `wheel.js`. Each entry is
+`"emoji keyword keyword…"`, where the keywords are what the search box matches.
+Stick to single code point emoji: icons travel inside share links, which cap each
+one at four UTF-16 units.
