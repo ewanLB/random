@@ -2,6 +2,7 @@ const canvas = document.getElementById('wheel');
 const ctx = canvas.getContext('2d');
 const addForm = document.getElementById('addForm');
 const newItemInput = document.getElementById('newItem');
+const addError = document.getElementById('addError');
 const resetButton = document.getElementById('resetButton');
 const optionList = document.getElementById('optionList');
 const iconList = document.getElementById('iconList');
@@ -19,6 +20,7 @@ const saveButton = document.getElementById('saveButton');
 const groupListEl = document.getElementById('groupList');
 const groupNameModal = document.getElementById('groupNameModal');
 const groupNameInput = document.getElementById('groupNameInput');
+const groupNameError = document.getElementById('groupNameError');
 const groupNameCancel = document.getElementById('groupNameCancel');
 const groupNameOk = document.getElementById('groupNameOk');
 const saveConfirmModal = document.getElementById('saveConfirmModal');
@@ -352,12 +354,39 @@ function closeConfirm() {
   closeDialog(confirmModal);
 }
 
+/* ---------- Field validation ---------- */
+
+// The forms carry novalidate, so this replaces the browser's own bubble: that popup is
+// drawn by the OS in its own grey, sits outside the dialog it belongs to, vanishes on the
+// next keystroke, and counts a field of nothing but spaces as filled in.
+function showFieldError(input, errorEl, message) {
+  errorEl.textContent = message;
+  errorEl.hidden = false;
+  input.classList.add('is-invalid');
+  input.setAttribute('aria-invalid', 'true');
+  // Restart the shake when the same empty field is submitted twice in a row.
+  input.classList.remove('shake-error');
+  void input.offsetWidth;
+  input.classList.add('shake-error');
+  input.focus();
+}
+
+function clearFieldError(input, errorEl) {
+  if (errorEl.hidden) return;
+  errorEl.hidden = true;
+  errorEl.textContent = '';
+  input.classList.remove('is-invalid', 'shake-error');
+  input.removeAttribute('aria-invalid');
+}
+
 function openGroupNameModal() {
   groupNameInput.value = '';
+  clearFieldError(groupNameInput, groupNameError);
   openDialog(groupNameModal, groupNameInput);
 }
 
 function closeGroupNameModal() {
+  clearFieldError(groupNameInput, groupNameError);
   closeDialog(groupNameModal);
 }
 
@@ -602,8 +631,9 @@ function updateOptionList() {
     li.appendChild(toggle);
 
     const del = document.createElement('button');
-    del.className = 'ant-btn ant-btn-link';
-    del.textContent = 'x';
+    del.type = 'button';
+    del.className = 'close-x';
+    del.textContent = '✕';
     del.title = 'Remove this option';
     del.setAttribute('aria-label', `Remove "${opt.text}"`);
     del.addEventListener('click', () => {
@@ -662,11 +692,17 @@ function updateGroupList() {
     nameSpan.title = g.name;
     li.appendChild(nameSpan);
 
+    const count = g.options ? g.options.length : 0;
+    const meta = document.createElement('div');
+    meta.className = 'group-meta';
+    meta.textContent = `${count} option${count === 1 ? '' : 's'}`;
+    li.appendChild(meta);
+
     const btnGroup = document.createElement('div');
     btnGroup.className = 'group-actions';
 
     const loadBtn = document.createElement('button');
-    loadBtn.className = 'ant-btn ant-btn-primary ant-btn-sm';
+    loadBtn.className = 'ant-btn ant-btn-primary ant-btn-sm group-load';
     loadBtn.textContent = 'Load';
     // Every row's button said just "Load" to a screen reader.
     loadBtn.title = `Load "${g.name}"`;
@@ -674,23 +710,26 @@ function updateGroupList() {
     loadBtn.addEventListener('click', () => loadGroup(idx));
 
     const shareBtn = document.createElement('button');
-    shareBtn.className = 'ant-btn ant-btn-sm';
+    shareBtn.className = 'ant-btn ant-btn-sm group-share';
     shareBtn.textContent = '🔗';
     shareBtn.title = `Share "${g.name}"`;
     shareBtn.setAttribute('aria-label', shareBtn.title);
     shareBtn.addEventListener('click', () => openShareModal(g.name, g.options));
 
+    // Sits in the row's top-right corner rather than in the button strip, so deleting a
+    // group cannot be a mis-aimed Load and the strip is all non-destructive.
     const delBtn = document.createElement('button');
-    delBtn.className = 'ant-btn ant-btn-link ant-btn-sm';
-    delBtn.textContent = 'x';
+    delBtn.type = 'button';
+    delBtn.className = 'close-x';
+    delBtn.textContent = '✕';
     delBtn.title = `Delete group "${g.name}"`;
     delBtn.setAttribute('aria-label', delBtn.title);
     delBtn.addEventListener('click', () => deleteGroup(idx));
 
     btnGroup.appendChild(loadBtn);
     btnGroup.appendChild(shareBtn);
-    btnGroup.appendChild(delBtn);
     li.appendChild(btnGroup);
+    li.appendChild(delBtn);
 
     groupListEl.appendChild(li);
   });
@@ -1707,17 +1746,22 @@ menuSlot.addEventListener('click', () => {
   menu.classList.remove('open');
 });
 
+newItemInput.addEventListener('input', () => clearFieldError(newItemInput, addError));
+
 addForm.addEventListener('submit', function (e) {
   e.preventDefault();
   const value = newItemInput.value.trim();
-  if (value) {
-    options.push({ text: value, active: true, icon: getUniqueIcon() });
-    arc = Math.PI * 2 / countActive();
-    saveOptions();
-    updateOptionList();
-    drawRouletteWheel();
-    newItemInput.value = '';
+  if (!value) {
+    showFieldError(newItemInput, addError, 'Type something to add as an option.');
+    return;
   }
+  clearFieldError(newItemInput, addError);
+  options.push({ text: value, active: true, icon: getUniqueIcon() });
+  arc = Math.PI * 2 / countActive();
+  saveOptions();
+  updateOptionList();
+  drawRouletteWheel();
+  newItemInput.value = '';
 });
 
 function resetOptions() {
@@ -1782,10 +1826,13 @@ function commitGroupSave(name) {
   openSaveConfirm();
 }
 
+groupNameInput.addEventListener('input', () => clearFieldError(groupNameInput, groupNameError));
+
 groupNameOk.addEventListener('click', function () {
   const name = groupNameInput.value.trim();
+  // A blank name used to close the dialog and quietly save nothing.
   if (!name) {
-    closeGroupNameModal();
+    showFieldError(groupNameInput, groupNameError, 'Give the group a name to save it.');
     return;
   }
   closeGroupNameModal();

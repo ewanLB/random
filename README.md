@@ -13,7 +13,9 @@ and spin a wheel to randomly choose one.
 - Results are shown in a pop-up modal
 - Save sets of options into named groups for later loading, shown in full rather than
   cut off after a character or two (and with the whole name in a tooltip when it is
-  long enough to need clamping)
+  long enough to need clamping), each with its option count and a corner ✕ to remove it
+- Required fields say so in the page, in the current theme, instead of leaning on the
+  browser's own grey validation bubble
 - One-click sharing: copy a link that carries your options to anyone else
 - Destructive actions (reset, delete a group, overwrite a saved name) ask first
 - Keyboard and screen-reader friendly: every mode can be played without a mouse

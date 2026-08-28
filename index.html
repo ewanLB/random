@@ -50,6 +50,8 @@
       --danger-glow: 0 8px 20px rgba(220, 38, 38, 0.45);
       /* Flat accent for icon-sized destructive controls, e.g. the row delete button. */
       --danger-accent: #e53e3e;
+      /* Barely-there wash behind a hovered ✕ or an invalid field. */
+      --danger-soft: rgba(229, 62, 62, 0.15);
       --success-bg: linear-gradient(135deg, #4ade80 0%, #16a34a 100%);
       --success-color: #fff;
       --success-border: none;
@@ -97,6 +99,7 @@
       --danger-hover-color: #fff6d5;
       --danger-glow: 0 6px 16px rgba(212, 175, 55, 0.4);
       --danger-accent: #ff5252;
+      --danger-soft: rgba(255, 82, 82, 0.2);
       --success-bg: linear-gradient(135deg, #1b5e20, #2e7d32);
       --success-color: #ffe9b0;
       --success-border: 1px solid #d4af37;
@@ -142,6 +145,7 @@
       --danger-hover-color: #05050f;
       --danger-glow: 0 0 20px #ff2a6d;
       --danger-accent: #ff2a6d;
+      --danger-soft: rgba(255, 42, 109, 0.22);
       --success-bg: rgba(57, 255, 20, 0.12);
       --success-color: #39ff14;
       --success-border: 1px solid #39ff14;
@@ -271,6 +275,14 @@
       max-width: 100%;
     }
 
+    /* Full width so it takes a line of its own under the whole control strip. Inside the
+       form it widened the form and bumped Reset onto the next row; positioned absolutely
+       under the form it landed on top of Save/Share/Reset once the strip wrapped. */
+    #controlsContainer .field-error {
+      width: 100%;
+      margin-top: 0;
+    }
+
     #addForm input {
       /* border-box + min-width:0 let the field shrink on a narrow phone instead of
          pushing the whole page wider than the viewport. */
@@ -360,27 +372,53 @@
       border-bottom-color: var(--highlight-color);
     }
 
-    /* Scoped to the delete button: the row also holds the icon picker button now, which
-       must not inherit the destructive colour. */
-    #optionList .ant-btn-link {
-      margin-left: 8px;
-      background: transparent;
+    /* Window-style dismiss, shared by option rows and saved groups. Both used to carry a
+       permanently red "x" that read as an action button of its own, shouting louder than
+       Load; this is a quiet ✕ that only turns destructive under the cursor. */
+    .close-x {
+      flex: none;
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       border: none;
+      border-radius: 50%;
+      background: transparent;
+      color: inherit;
+      /* Quiet, but not so faint it reads as decoration. */
+      opacity: 0.6;
+      font-family: var(--font-main);
+      font-size: 13px;
+      line-height: 1;
       cursor: pointer;
-      font-size: 1.2em;
-      color: var(--danger-accent);
-      opacity: 0.8;
+      transition: opacity 0.15s, background 0.15s, color 0.15s, transform 0.15s;
     }
 
-    [data-theme="cyberpunk"] #optionList .ant-btn-link {
-      /* Magenta is this theme's primary accent, so a magenta delete read as "confirm".
-         Keep the neon glow, use the theme's danger colour. */
-      text-shadow: 0 0 5px var(--danger-accent);
+    /* Everything else in this theme has square corners. */
+    [data-theme="cyberpunk"] .close-x {
+      border-radius: 0;
     }
 
-    #optionList .ant-btn-link:hover {
+    .close-x:hover,
+    .close-x:focus-visible {
       opacity: 1;
-      transform: scale(1.1);
+      color: var(--danger-accent);
+      background: var(--danger-soft);
+    }
+
+    .close-x:active {
+      transform: scale(0.88);
+    }
+
+    .close-x:focus-visible {
+      outline: 2px solid var(--danger-accent);
+      outline-offset: 1px;
+    }
+
+    #optionList .close-x {
+      margin-left: 8px;
     }
 
     /* Components */
@@ -505,11 +543,6 @@
       box-shadow: 0 8px 20px rgba(102, 126, 234, 0.5);
     }
 
-    [data-theme="glass"] .ant-btn-link:hover {
-      background: rgba(255, 255, 255, 0.6);
-      color: var(--danger-accent);
-    }
-
     [data-theme="casino"] .ant-btn:hover {
       transform: var(--btn-hover-transform);
       box-shadow: 0 6px 16px rgba(212, 175, 55, 0.35);
@@ -604,6 +637,64 @@
     [data-theme="cyberpunk"] .ant-input:focus {
       border-bottom-color: #ff00ff;
       box-shadow: 0 5px 10px -5px #ff00ff;
+    }
+
+    /* Required fields used to lean on the browser's own bubble ("Please fill in this
+       field."), a grey OS popup that ignores the theme, points at the field from outside
+       the dialog, and disappears on the next keystroke. Forms are novalidate now and say
+       it themselves, in the theme's own colours. */
+    .ant-input.is-invalid {
+      border-color: var(--danger-accent);
+      box-shadow: 0 0 0 3px var(--danger-soft);
+    }
+
+    [data-theme="cyberpunk"] .ant-input.is-invalid {
+      border-bottom-color: var(--danger-accent);
+    }
+
+    .field-error {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 8px;
+      font-family: var(--font-main);
+      font-size: 0.85em;
+      line-height: 1.4;
+      color: var(--danger-accent);
+    }
+
+    /* display:flex above would otherwise beat the hidden attribute. */
+    .field-error[hidden] {
+      display: none;
+    }
+
+    .field-error::before {
+      content: '⚠';
+      font-size: 1.1em;
+    }
+
+    /* Nudge rather than shove: enough to notice, not enough to bounce the layout. */
+    @keyframes field-shake {
+
+      0%,
+      100% {
+        transform: translateX(0);
+      }
+
+      20%,
+      60% {
+        transform: translateX(-4px);
+      }
+
+      40%,
+      80% {
+        transform: translateX(4px);
+      }
+    }
+
+    .shake-error {
+      animation: field-shake 0.3s ease;
     }
 
     /* Modals */
@@ -1150,6 +1241,11 @@
       #slotLever:active .lever-ball {
         transform: none;
       }
+
+      /* The red border and the message carry the error on their own. */
+      .shake-error {
+        animation: none;
+      }
     }
 
     #slotControls {
@@ -1343,6 +1439,19 @@
       display: none !important;
     }
 
+    /* The panel used to be an unlabelled stack of rows floating at the left edge. */
+    .panel-title {
+      margin: 0 0 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid currentColor;
+      /* The rule is a separator, not a feature. */
+      opacity: 0.75;
+      font-family: var(--font-title);
+      font-size: 1em;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+
     .group-name {
       /* Two full-width lines before it gives up; the whole name is in the title tooltip
          either way. It used to be one nowrap line sharing 320px with three buttons, so
@@ -1356,18 +1465,35 @@
       text-align: left;
       font-weight: 600;
       line-height: 1.35;
+      /* Room for the ✕ pinned in the corner. */
+      padding-right: 24px;
+    }
+
+    /* How many options are in there: the row was a name and two buttons with an awkward
+       gap between them, and the count is the thing you actually want before loading. */
+    .group-meta {
+      margin-top: -2px;
+      font-size: 0.78em;
+      opacity: 0.65;
     }
 
     .group-actions {
       display: flex;
-      gap: 5px;
-      flex-shrink: 0;
-      justify-content: flex-end;
+      gap: 6px;
+      margin-top: 2px;
     }
 
-    [data-theme="cyberpunk"] .group-actions button:first-child {
-      min-width: 80px;
-      /* Ensure Load buttons align vertically */
+    /* Load stretches to fill the row so the buttons line up down the panel, but stops
+       short of absurd on the wide stacked layout, where 🔗 keeps to the right edge under
+       the ✕ instead of trailing the row with dead space after it. */
+    .group-actions .group-load {
+      flex: 1 1 auto;
+      max-width: 240px;
+    }
+
+    .group-actions .group-share {
+      flex: 0 0 auto;
+      margin-left: auto;
     }
 
     #groupList {
@@ -1383,8 +1509,10 @@
          name about 60px wide. */
       flex-direction: column;
       align-items: stretch;
-      gap: 6px;
-      padding: 8px 12px;
+      gap: 4px;
+      /* Anchor for the corner ✕. */
+      position: relative;
+      padding: 8px 12px 10px;
       border-radius: 4px;
       /* Dark translucent rows with white text were nearly unreadable inside the
          light glass panel. */
@@ -1409,6 +1537,13 @@
     /* .group-actions owns the spacing now; the old margin doubled it up. */
     #groupList .group-actions button {
       margin-left: 0;
+    }
+
+    /* Top-right like a window's close button, out of the way of Load and 🔗. */
+    #groupList .close-x {
+      position: absolute;
+      top: 5px;
+      right: 6px;
     }
 
     #iconList {
@@ -1795,7 +1930,8 @@
     </select>
   </div>
 
-  <div id="groupPanel" class="ant-card">
+  <div id="groupPanel" class="ant-card" role="region" aria-labelledby="groupPanelTitle">
+    <h2 id="groupPanelTitle" class="panel-title">Saved groups</h2>
     <ul id="groupList"></ul>
   </div>
   <div id="menu" class="ant-card">
@@ -1830,13 +1966,18 @@
     <div id="arrow"></div>
   </div>
   <div id="controlsContainer">
-    <form id="addForm">
-      <input id="newItem" type="text" placeholder="Add option" required class="ant-input">
+    <!-- novalidate: wheel.js checks this itself so the message can be styled and can also
+         catch a name that is nothing but spaces. -->
+    <form id="addForm" novalidate>
+      <input id="newItem" type="text" placeholder="Add option" required class="ant-input" autocomplete="off"
+        aria-describedby="addError">
       <button type="submit" class="ant-btn ant-btn-primary">Add</button>
     </form>
     <button id="saveButton" class="ant-btn" title="Save these options as a named group">Save</button>
     <button id="shareButton" class="ant-btn" title="Get a link that carries these options">Share</button>
     <button id="resetButton" class="ant-btn" title="Replace all options with the defaults">Reset</button>
+    <!-- Outside the form so it can take a line of its own once the strip wraps. -->
+    <div id="addError" class="field-error" role="alert" hidden></div>
   </div>
   <ul id="optionList"></ul>
   <div id="iconList"></div>
@@ -1882,7 +2023,9 @@
             <div class="ant-modal-title">Save Group</div>
           </div>
           <div class="ant-modal-body">
-            <input id="groupNameInput" class="ant-input" placeholder="Group name" />
+            <input id="groupNameInput" class="ant-input" placeholder="Group name" required autocomplete="off"
+              aria-describedby="groupNameError" />
+            <div id="groupNameError" class="field-error" role="alert" hidden></div>
           </div>
           <div class="ant-modal-footer">
             <button id="groupNameCancel" class="ant-btn">Cancel</button>
