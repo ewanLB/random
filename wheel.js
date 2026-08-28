@@ -658,6 +658,8 @@ function updateGroupList() {
     const nameSpan = document.createElement('span');
     nameSpan.className = 'group-name';
     nameSpan.textContent = g.name;
+    // A name too long even for two lines is clamped, so keep the whole thing on hover.
+    nameSpan.title = g.name;
     li.appendChild(nameSpan);
 
     const btnGroup = document.createElement('div');
@@ -666,12 +668,16 @@ function updateGroupList() {
     const loadBtn = document.createElement('button');
     loadBtn.className = 'ant-btn ant-btn-primary ant-btn-sm';
     loadBtn.textContent = 'Load';
+    // Every row's button said just "Load" to a screen reader.
+    loadBtn.title = `Load "${g.name}"`;
+    loadBtn.setAttribute('aria-label', loadBtn.title);
     loadBtn.addEventListener('click', () => loadGroup(idx));
 
     const shareBtn = document.createElement('button');
     shareBtn.className = 'ant-btn ant-btn-sm';
     shareBtn.textContent = '🔗';
-    shareBtn.title = 'Share this group';
+    shareBtn.title = `Share "${g.name}"`;
+    shareBtn.setAttribute('aria-label', shareBtn.title);
     shareBtn.addEventListener('click', () => openShareModal(g.name, g.options));
 
     const delBtn = document.createElement('button');
@@ -1521,6 +1527,7 @@ function initSlot() {
   // Rebuilding the reels invalidates any spin in flight.
   slotSpinId++;
   slotSpinning = false;
+  setLeverBusy(false);
 
   REEL_IDS.forEach((id, reelIdx) => {
     const reel = document.getElementById(id);
@@ -1567,6 +1574,11 @@ function playWinSound() {
   osc.stop(audioCtx.currentTime + 0.5);
 }
 
+function setLeverBusy(busy) {
+  if (!slotLever) return;
+  slotLever.setAttribute('aria-disabled', busy ? 'true' : 'false');
+}
+
 function spinSlot() {
   const active = options.filter(o => o.active);
   // Re-pulling the lever mid-spin used to queue a second winner popup.
@@ -1574,6 +1586,8 @@ function spinSlot() {
 
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   slotSpinning = true;
+  // Pulls are ignored until the reels settle; say so instead of just not responding.
+  setLeverBusy(true);
   const spinId = ++slotSpinId;
   startSpinSound();
 
@@ -1613,11 +1627,17 @@ function spinSlot() {
   setTimeout(() => {
     if (spinId !== slotSpinId) return; // options changed mid-spin
     slotSpinning = false;
+    setLeverBusy(false);
     stopSpinSound();
     playWinSound();
     showModal(winner, winnerIndex);
   }, total);
 }
+
+// Keyed to the lever-pull keyframes in index.html: the arm bottoms out at 24% of 850ms,
+// and the spring back home is finished by the end of the run.
+const LEVER_BOTTOM_MS = 205;
+const LEVER_PULL_MS = 900;
 
 const slotLever = document.getElementById('slotLever');
 if (slotLever) {
@@ -1626,15 +1646,9 @@ if (slotLever) {
 
     slotLever.classList.add('pulled');
 
-    // Wait for animation down
-    setTimeout(() => {
-      spinSlot();
-
-      // Reset lever after a short delay
-      setTimeout(() => {
-        slotLever.classList.remove('pulled');
-      }, 500);
-    }, 300);
+    // The reels take off as the handle bottoms out, so the pull looks like it drives them.
+    setTimeout(spinSlot, LEVER_BOTTOM_MS);
+    setTimeout(() => slotLever.classList.remove('pulled'), LEVER_PULL_MS);
   };
   slotLever.addEventListener('click', pullLever);
   // The lever is a div, so it needed its own keyboard handling.

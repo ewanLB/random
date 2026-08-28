@@ -59,6 +59,9 @@
       --reel-w: 100px;
       --reel-item-h: 150px;
       --reel-dot: 80px;
+      /* How far out to the right the handle swings while it is pulled. A variable because
+         the narrowest phones cannot spare the room for the full swing. */
+      --lever-lean: 44deg;
     }
 
     /* Casino Theme Overrides */
@@ -412,11 +415,13 @@
       border-left: 2px solid #00f3ff;
     }
 
+    /* Flush with the border rather than 1px outside it: hanging over the right edge gave
+       every cyberpunk page a 1px horizontal scroll on a phone. */
     [data-theme="cyberpunk"] .ant-card::after {
       content: '';
       position: absolute;
-      bottom: -1px;
-      right: -1px;
+      bottom: 0;
+      right: 0;
       width: 10px;
       height: 10px;
       border-bottom: 2px solid #00f3ff;
@@ -950,9 +955,25 @@
       position: relative;
       cursor: pointer;
       margin-left: 10px;
+      /* No grey flash when the handle is tapped on a phone. */
+      -webkit-tap-highlight-color: transparent;
+      /* #slotContainer's perspective applies to this element, not to the arm inside it, so
+         the arm needs its own to swing in depth. Origin sits on the bolt below. */
+      perspective: 600px;
+      perspective-origin: 20px 120px;
+    }
+
+    /* It is a div with role="button", so it never got the shared focus ring. */
+    #slotLever:focus-visible {
+      outline: 3px solid var(--highlight-color);
+      outline-offset: 4px;
+      border-radius: 8px;
     }
 
     .lever-base {
+      /* Cyberpunk puts a 1px border on the housing; without this it widened the whole
+         machine and pushed the swinging arm past the edge of a 375px screen. */
+      box-sizing: border-box;
       width: 40px;
       height: 100px;
       background: linear-gradient(to right, #555, #333, #555);
@@ -962,15 +983,34 @@
       box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
     }
 
+    /* The bolt the arm pivots on, sitting exactly on the stick's transform-origin so the
+       swing looks mounted instead of hinged on thin air. */
+    .lever-base::after {
+      content: '';
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      width: 16px;
+      height: 16px;
+      margin-left: -8px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #888, #222);
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6);
+    }
+
     .lever-stick {
       width: 10px;
       height: 100px;
       background: linear-gradient(to right, #ccc, #999, #ccc);
+      border-radius: 5px 5px 0 0;
       position: absolute;
       bottom: 80px;
       left: 15px;
       transform-origin: bottom center;
-      transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+      transition: transform 0.25s ease-out;
+      /* So the ball can turn to face the camera instead of being flattened into the arm's
+         plane while the arm is tipped towards the viewer. */
+      transform-style: preserve-3d;
     }
 
     .lever-ball {
@@ -981,13 +1021,135 @@
       position: absolute;
       top: -20px;
       left: 50%;
-      transform: translateX(-50%);
+      /* Centred with a margin rather than translateX(-50%), so transform is free for the
+         counter-rotation below. */
+      margin-left: -20px;
       box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
     }
 
-    /* Lever Animation */
+    /* Anticipation: the handle dips under the pointer so it reads as something to pull. */
+    #slotLever:hover .lever-stick {
+      transform: rotate(9deg);
+    }
+
+    #slotLever:hover .lever-ball {
+      transform: rotate(-9deg);
+    }
+
+    #slotLever:active .lever-stick {
+      transform: rotate(22deg);
+    }
+
+    #slotLever:active .lever-ball {
+      transform: rotate(-22deg);
+    }
+
+    /* Lever Animation.
+       The pull used to be one rotateX(-60deg) on an element with no perspective of its own,
+       so the arm did not swing at all — it squashed straight down and popped back.
+       It now pivots on the bolt in two axes at once, the way a real handle behaves: it
+       swings out to the right (rotate) and tips towards the viewer (rotateX), holds while
+       the reels take off, then springs past vertical on the way home. Tipping in depth is
+       what keeps the swing on screen — a flat 80deg swing threw the ball a whole arm's
+       length sideways, which ran off the right edge of a phone.
+       The ball cancels both rotations so it keeps facing the camera: it stays a round,
+       lit sphere and only grows a little as it comes nearer, instead of shearing into a
+       spinning disc. Per-keyframe easing, because one easing across the whole run made
+       the hold and the spring-back drift. */
+    @keyframes lever-pull {
+      0% {
+        transform: rotate(0deg);
+        animation-timing-function: cubic-bezier(0.3, 0, 0.6, 1);
+      }
+
+      24% {
+        transform: rotate(var(--lever-lean)) rotateX(-58deg);
+        animation-timing-function: linear;
+      }
+
+      44% {
+        transform: rotate(calc(var(--lever-lean) + 2deg)) rotateX(-61deg);
+        animation-timing-function: cubic-bezier(0.35, 0, 0.3, 1);
+      }
+
+      72% {
+        transform: rotate(-9deg) rotateX(6deg);
+        animation-timing-function: ease-in-out;
+      }
+
+      86% {
+        transform: rotate(4deg) rotateX(-3deg);
+        animation-timing-function: ease-in-out;
+      }
+
+      100% {
+        transform: rotate(0deg);
+      }
+    }
+
+    @keyframes lever-pull-ball {
+      0% {
+        transform: rotate(0deg);
+        animation-timing-function: cubic-bezier(0.3, 0, 0.6, 1);
+      }
+
+      24% {
+        transform: rotateX(58deg) rotate(calc(var(--lever-lean) * -1));
+        animation-timing-function: linear;
+      }
+
+      44% {
+        transform: rotateX(61deg) rotate(calc((var(--lever-lean) + 2deg) * -1));
+        animation-timing-function: cubic-bezier(0.35, 0, 0.3, 1);
+      }
+
+      72% {
+        transform: rotateX(-6deg) rotate(9deg);
+        animation-timing-function: ease-in-out;
+      }
+
+      86% {
+        transform: rotateX(3deg) rotate(-4deg);
+        animation-timing-function: ease-in-out;
+      }
+
+      100% {
+        transform: rotate(0deg);
+      }
+    }
+
     #slotLever.pulled .lever-stick {
-      transform: rotateX(-60deg);
+      animation: lever-pull 0.85s both;
+    }
+
+    #slotLever.pulled .lever-ball {
+      animation: lever-pull-ball 0.85s both;
+    }
+
+    /* Reels still running: the click would be ignored, so drop the hover invitation.
+       Must follow the :hover rules, which carry the same specificity. */
+    #slotLever[aria-disabled="true"] {
+      cursor: progress;
+    }
+
+    #slotLever[aria-disabled="true"] .lever-stick,
+    #slotLever[aria-disabled="true"] .lever-ball {
+      transform: rotate(0deg);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+
+      #slotLever.pulled .lever-stick,
+      #slotLever.pulled .lever-ball {
+        animation-duration: 0.01s;
+      }
+
+      #slotLever:hover .lever-stick,
+      #slotLever:hover .lever-ball,
+      #slotLever:active .lever-stick,
+      #slotLever:active .lever-ball {
+        transform: none;
+      }
     }
 
     #slotControls {
@@ -1182,18 +1344,25 @@
     }
 
     .group-name {
-      flex: 1;
+      /* Two full-width lines before it gives up; the whole name is in the title tooltip
+         either way. It used to be one nowrap line sharing 320px with three buttons, so
+         anything longer than a few characters showed as "B…". */
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
       overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      margin-right: 10px;
+      /* Long unbroken names (URLs, one long CJK run) have to break somewhere. */
+      overflow-wrap: anywhere;
       text-align: left;
+      font-weight: 600;
+      line-height: 1.35;
     }
 
     .group-actions {
       display: flex;
       gap: 5px;
       flex-shrink: 0;
+      justify-content: flex-end;
     }
 
     [data-theme="cyberpunk"] .group-actions button:first-child {
@@ -1210,8 +1379,11 @@
     #groupList li {
       margin-bottom: 8px;
       display: flex;
-      align-items: center;
-      justify-content: space-between;
+      /* Name on its own line, actions underneath: three buttons on the same row left the
+         name about 60px wide. */
+      flex-direction: column;
+      align-items: stretch;
+      gap: 6px;
       padding: 8px 12px;
       border-radius: 4px;
       /* Dark translucent rows with white text were nearly unreadable inside the
@@ -1221,8 +1393,6 @@
     }
 
     [data-theme="cyberpunk"] #groupList li {
-      display: flex;
-      justify-content: space-between;
       background: rgba(0, 243, 255, 0.05);
       padding: 8px 12px;
       border-left: 2px solid #00f3ff;
@@ -1236,8 +1406,9 @@
       background: rgba(0, 243, 255, 0.15);
     }
 
-    #groupList button {
-      margin-left: 6px;
+    /* .group-actions owns the spacing now; the old margin doubled it up. */
+    #groupList .group-actions button {
+      margin-left: 0;
     }
 
     #iconList {
@@ -1517,11 +1688,21 @@
         width: 28px;
         height: 150px;
         margin-left: 2px;
+        /* Keep the vanishing point on the bolt, which sits higher in this shorter housing. */
+        perspective-origin: 14px 94px;
       }
 
       .lever-base {
         width: 28px;
         height: 70px;
+      }
+
+      /* Keep the bolt on the pivot: the stick's base sits 14px below the housing top here. */
+      .lever-base::after {
+        top: 8px;
+        width: 12px;
+        height: 12px;
+        margin-left: -6px;
       }
 
       .lever-stick {
@@ -1534,6 +1715,7 @@
         width: 28px;
         height: 28px;
         top: -14px;
+        margin-left: -14px;
       }
     }
 
@@ -1543,6 +1725,14 @@
       body {
         padding-left: 10px;
         padding-right: 10px;
+      }
+
+      /* Narrower reels and a shallower swing so the handle stays on screen: at 20vw and a
+         full lean a 320px screen had nothing to spare and the ball crossed the edge. The
+         tip towards the viewer carries the pull here, so the shorter arc still reads. */
+      :root {
+        --reel-w: 18vw;
+        --lever-lean: 30deg;
       }
 
       #title {

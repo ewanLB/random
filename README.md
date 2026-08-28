@@ -11,7 +11,9 @@ and spin a wheel to randomly choose one.
 - Options can be toggled on/off without deletion
 - Each option gets its own emoji, changeable through a searchable picker
 - Results are shown in a pop-up modal
-- Save sets of options into named groups for later loading
+- Save sets of options into named groups for later loading, shown in full rather than
+  cut off after a character or two (and with the whole name in a tooltip when it is
+  long enough to need clamping)
 - One-click sharing: copy a link that carries your options to anyone else
 - Destructive actions (reset, delete a group, overwrite a saved name) ask first
 - Keyboard and screen-reader friendly: every mode can be played without a mouse
